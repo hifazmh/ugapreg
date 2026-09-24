@@ -174,7 +174,7 @@
 
         <!-- Dark / Light Theme Toggle -->
         <button id="themeToggleBtn" class="p-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-amber-300 border border-slate-700 transition-colors cursor-pointer" title="Toggle Dark / Light Theme" aria-label="Toggle Theme">
-          <i id="themeIcon" data-lucide="sun-moon" class="w-3.5 h-3.5"></i>
+          <i id="themeIcon" data-lucide="moon" class="w-3.5 h-3.5"></i>
         </button>
 
         <!-- Cloud Sync Pill (Desktop only for compactness) -->
@@ -920,10 +920,20 @@
     window.updateHeroCountdownSpotlight();
   }
 
+  // Helper to send the admin passcode to the database
+  function getAdminSupabase() {
+    return supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      global: {
+        headers: { 'x-admin-passcode': 'UGAP@reg/5006' }
+      }
+    });
+  }
+
   async function saveOpportunityToCloud(item) {
     if (supabaseClient) {
       try {
-        await supabaseClient.from('opportunities').upsert(mapToDb(item));
+        const client = getAdminSupabase();
+        await client.from('opportunities').upsert(mapToDb(item));
       } catch (e) {
         console.error("Supabase upsert error:", e);
       }
@@ -940,7 +950,8 @@
   async function deleteOpportunityFromCloud(id) {
     if (supabaseClient) {
       try {
-        await supabaseClient.from('opportunities').delete().eq('id', id);
+        const client = getAdminSupabase();
+        await client.from('opportunities').delete().eq('id', id);
       } catch (e) {
         console.error("Supabase delete error:", e);
       }
@@ -1480,12 +1491,12 @@
     function updateThemeUI(isDark) {
       if (isDark) {
         document.documentElement.classList.add('dark');
-        if (themeIcon) themeIcon.setAttribute('data-lucide', '‎sun-moon‎');
+        if (themeIcon) themeIcon.setAttribute('data-lucide', 'sun');
         if (themeMeta) themeMeta.setAttribute('content', '#080E1E');
         try { localStorage.setItem('ugap_portal_theme', 'dark'); } catch(e){}
       } else {
         document.documentElement.classList.remove('dark');
-        if (themeIcon) themeIcon.setAttribute('data-lucide', 'sun-moon');
+        if (themeIcon) themeIcon.setAttribute('data-lucide', 'moon');
         if (themeMeta) themeMeta.setAttribute('content', '#0B132B');
         try { localStorage.setItem('ugap_portal_theme', 'light'); } catch(e){}
       }
