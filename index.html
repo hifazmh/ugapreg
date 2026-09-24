@@ -700,1314 +700,1234 @@
     <span id="toastMsg" class="font-medium">Action completed successfully.</span>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { 
-      getAuth, 
-      signInAnonymously, 
-      signInWithCustomToken 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { 
-      getFirestore, 
-      doc, 
-      setDoc, 
-      deleteDoc, 
-      onSnapshot, 
-      collection 
-    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  <!-- Supabase JS Client CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    // Safe Lucide Icon Renderer Guard
-    window.safeCreateIcons = function() {
-      if (typeof lucide !== 'undefined' && lucide && typeof lucide.createIcons === 'function') {
-        try {
-          lucide.createIcons();
-        } catch (err) {
-          console.warn('Lucide icon rendering notice:', err);
-        }
-      }
-    };
+<script>
+  // ==================================================================
+  // 1. SUPABASE CREDENTIALS (PASTE YOUR VALUES HERE)
+  // ==================================================================
+  const SUPABASE_URL = "https://sseboumhapaxahfzjdgv.supabase.co"; // Paste your full URL from Supabase Connect
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_hGfdpkyO6sjPdNi83JFPrA_gXu7jkWd";     // Paste your full Publishable key
 
-    // Golden Confetti Burst Helper
-    window.triggerConfetti = function() {
-      if (typeof confetti === 'function') {
-        confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { y: 0.7 },
-          colors: ['#D97706', '#F59E0B', '#1C2541', '#059669']
-        });
-      }
-    };
+  let supabaseClient = null;
+  if (SUPABASE_URL && !SUPABASE_URL.includes("...") && SUPABASE_PUBLISHABLE_KEY && !SUPABASE_PUBLISHABLE_KEY.includes("...")) {
+    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  }
 
-    // Default Seed Opportunities
-    const DEFAULT_OPPORTUNITIES = [
-      {
-        id: "ugap-felicitation-volunteers",
-        titleEn: "Volunteer Intake: Annual Felicitation Ceremony 2026",
-        titleTa: "பல்கலைக்கழக மாணவர் பாராட்டு விழா 2026: தொண்டர் விண்ணப்பம்",
-        category: "Felicitation Ceremony",
-        eligibility: "State University Undergraduates (Puttalam District)",
-        formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSc_SampleForm1/viewform",
-        flyerUrl: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800&q=80",
-        deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        isExtended: true,
-        status: "open",
-        descEn: "Join the organizing wings: stage protocols, candidate coordination, guest relations, and design desk."
-      },
-      {
-        id: "ugap-al-seminar-instructors",
-        titleEn: "Academic Mentors: District G.C.E. A/L Seminar Series",
-        titleTa: "உயர்தர மாதிரி வினாத்தாள் கருத்தரங்கு: பல்கலைக்கழக ஆசிரியர் குழு",
-        category: "Academic Seminars",
-        eligibility: "Undergraduates in Science, Maths, Tech & Commerce",
-        formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSc_SampleForm2/viewform",
-        flyerUrl: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=800&q=80",
-        deadline: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-        isExtended: false,
-        status: "open",
-        descEn: "Inviting university students to lead model paper discussions and exam time management clinics."
-      },
-      {
-        id: "ugap-media-team-applications",
-        titleEn: "Editorial & Media Directorate Application 2026",
-        titleTa: "ஊடகம் மற்றும் வடிவமைப்பு குழுவுக்கான விண்ணப்பம்",
-        category: "Media & PR",
-        eligibility: "Creative writers, photographers, video editors & graphic designers",
-        formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSc_SampleForm3/viewform",
-        flyerUrl: "",
-        deadline: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        isExtended: false,
-        status: "closed",
-        descEn: "Lead the association's verified social feeds, official releases, and event branding campaigns."
-      }
-    ];
-
-    // Multilingual Dictionary
-    const I18N = {
-      en: {
-        banner: "Undergraduates' Association - Puttalam (UGAP) • Central Intake",
-        heroTag: "Central Intake & Opportunity Portal",
-        heroHeading: "Central Registration & Applications Hub",
-        heroSubtitle: "Official application intake, program registrations, and academic initiative rosters for the Undergraduates' Association - Puttalam.",
-        trust1: "Verified Intake Channels",
-        trust2: "Direct In-App Forms",
-        trust3: "Live Deadline Tracking",
-        applyBtn: "Apply / Register Now",
-        viewFlyer: "View Flyer",
-        deadlineLabel: "Deadline",
-        extendedBadge: "DEADLINE EXTENDED",
-        closingSoonBadge: "CLOSING SOON",
-        activeBadge: "OPEN",
-        closedBadge: "CLOSED"
-      },
-      ta: {
-        banner: "புத்தளம் மாவட்ட பட்டதாரிகள் ஒன்றியம் (UGAP) • உத்தியோகபூர்வ தளம்",
-        heroTag: "மத்திய விண்ணப்ப மற்றும் பதிவு மையம்",
-        heroHeading: "பதிவுகள் மற்றும் விண்ணப்பங்களுக்கான தளம்",
-        heroSubtitle: "புத்தளம் மாவட்ட பல்கலைக்கழக மாணவர் ஒன்றியத்தின் வருடாந்த நிகழ்வுகள், தொண்டர் பதிவுகள் மற்றும் வழிகாட்டல் திட்டங்களுக்கான உத்தியோகபூர்வ பதிவேடு.",
-        trust1: "அங்கீகரிக்கப்பட்ட பதிவுகள்",
-        trust2: "நேரடி கூகிள் படிவங்கள்",
-        trust3: "முடிவுத்திகதி விபரங்கள்",
-        applyBtn: "இன்றே விண்ணப்பிக்க",
-        viewFlyer: "போஸ்டர் காண்க",
-        deadlineLabel: "முடிவுத் திகதி",
-        extendedBadge: "காலக்கெடு நீடிக்கப்பட்டது",
-        closingSoonBadge: "விரைவில் நிறைவடையும்",
-        activeBadge: "பதிவுகள் ஆரம்பம்",
-        closedBadge: "நிறைவடைந்தது"
-      }
-    };
-
-    // State Variables
-    let currentLang = 'en';
-    let isAdminActive = false;
-    let currentFilter = 'all';
-    let opportunities = [];
-    let currentFlyerData = '';
-
-    // Database Environment
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'ugap-portal-puttalam';
-    let firebaseConfig = null;
-    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-      try {
-        firebaseConfig = JSON.parse(__firebase_config);
-      } catch (err) {
-        console.warn("Could not parse cloud configuration:", err);
-      }
+  // Safe Lucide Icon Renderer Guard
+  window.safeCreateIcons = function() {
+    if (typeof lucide !== 'undefined' && lucide && typeof lucide.createIcons === 'function') {
+      try { lucide.createIcons(); } catch (err) {}
     }
+  };
 
-    let db = null;
-    let auth = null;
-    let authUser = null;
-    let isCloudConnected = false;
-
-    function updateCloudIndicator(status) {
-      const dot = document.getElementById('cloudDot');
-      const text = document.getElementById('cloudStatusText');
-      if (!dot || !text) return;
-
-      if (status === 'live') {
-        dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse";
-        text.textContent = "Live Cloud Sync";
-        text.className = "font-medium text-emerald-300";
-      } else if (status === 'connecting') {
-        dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping";
-        text.textContent = "Connecting...";
-        text.className = "font-medium text-amber-300";
-      } else {
-        dot.className = "w-1.5 h-1.5 rounded-full bg-slate-500";
-        text.textContent = "Local Storage";
-        text.className = "font-medium text-slate-400";
-      }
-    }
-
-    async function initDatabase() {
-      updateCloudIndicator('connecting');
-
-      if (firebaseConfig) {
-        try {
-          const app = initializeApp(firebaseConfig);
-          auth = getAuth(app);
-          db = getFirestore(app);
-
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
-          authUser = auth.currentUser;
-
-          if (authUser) {
-            isCloudConnected = true;
-            updateCloudIndicator('live');
-            subscribeToCloudOpportunities();
-            return;
-          }
-        } catch (err) {
-          console.warn("Cloud connection notice, using local cache:", err);
-        }
-      }
-
-      updateCloudIndicator('offline');
-      initLocalData();
-    }
-
-    function subscribeToCloudOpportunities() {
-      if (!db || !authUser) return;
-      const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'opportunities');
-
-      onSnapshot(collectionRef, async (snapshot) => {
-        if (!snapshot.empty) {
-          const loaded = [];
-          snapshot.forEach((docSnapshot) => {
-            loaded.push(docSnapshot.data());
-          });
-          loaded.sort((a, b) => new Date(b.deadline).getTime() - new Date(a.deadline).getTime());
-          opportunities = loaded;
-          renderOpportunities();
-          updateHeroCountdownSpotlight();
-        } else {
-          opportunities = DEFAULT_OPPORTUNITIES;
-          renderOpportunities();
-          updateHeroCountdownSpotlight();
-          for (const item of DEFAULT_OPPORTUNITIES) {
-            await saveOpportunityToCloud(item);
-          }
-        }
-      }, (err) => {
-        console.error("Cloud listener notice:", err);
-        initLocalData();
+  // Golden Confetti Burst Helper
+  window.triggerConfetti = function() {
+    if (typeof confetti === 'function') {
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.7 },
+        colors: ['#D97706', '#F59E0B', '#1C2541', '#059669']
       });
     }
+  };
 
-    async function saveOpportunityToCloud(item) {
-      if (isCloudConnected && db && authUser) {
-        try {
-          const itemDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'opportunities', item.id);
-          await setDoc(itemDocRef, item);
-          return true;
-        } catch (err) {
-          console.error("Cloud write notice:", err);
-        }
-      }
-
-      const idx = opportunities.findIndex(o => o.id === item.id);
-      if (idx >= 0) {
-        opportunities[idx] = item;
-      } else {
-        opportunities.unshift(item);
-      }
-      saveLocalData();
-      renderOpportunities();
-      updateHeroCountdownSpotlight();
-      return true;
+  // Default Seed Opportunities
+  const DEFAULT_OPPORTUNITIES = [
+    {
+      id: "ugap-felicitation-volunteers",
+      titleEn: "Volunteer Intake: Annual Felicitation Ceremony 2026",
+      titleTa: "பல்கலைக்கழக மாணவர் பாராட்டு விழா 2026: தொண்டர் விண்ணப்பம்",
+      category: "Felicitation Ceremony",
+      eligibility: "State University Undergraduates (Puttalam District)",
+      formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSc_SampleForm1/viewform",
+      flyerUrl: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800&q=80",
+      deadline: new Date(Date.now() + 14 * 86400000).toISOString(),
+      isExtended: true,
+      status: "open",
+      descEn: "Join the organizing wings: stage protocols, candidate coordination, guest relations, and design desk."
+    },
+    {
+      id: "ugap-al-seminar-instructors",
+      titleEn: "Academic Mentors: District G.C.E. A/L Seminar Series",
+      titleTa: "உயர்தர மாதிரி வினாத்தாள் கருத்தரங்கு: பல்கலைக்கழக ஆசிரியர் குழு",
+      category: "Academic Seminars",
+      eligibility: "Undergraduates in Science, Maths, Tech & Commerce",
+      formUrl: "https://docs.google.com/forms/d/e/1FAIpQLSc_SampleForm2/viewform",
+      flyerUrl: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=800&q=80",
+      deadline: new Date(Date.now() + 2 * 86400000).toISOString(),
+      isExtended: false,
+      status: "open",
+      descEn: "Inviting university students to lead model paper discussions and exam time management clinics."
     }
+  ];
 
-    async function deleteOpportunityFromCloud(id) {
-      if (isCloudConnected && db && authUser) {
-        try {
-          const itemDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'opportunities', id);
-          await deleteDoc(itemDocRef);
-          return true;
-        } catch (err) {
-          console.error("Cloud delete notice:", err);
-        }
-      }
-
-      opportunities = opportunities.filter(o => o.id !== id);
-      saveLocalData();
-      renderOpportunities();
-      updateHeroCountdownSpotlight();
-      return true;
+  // Multilingual Dictionary
+  const I18N = {
+    en: {
+      banner: "Official UGAP Registration Portal",
+      heroTag: "Connect, Participate & Lead",
+      heroHeading: "Central Registration & Applications Portal",
+      heroSubtitle: "The centralized gateway for enrollment across all official UGAP initiatives.",
+      trust1: "Secure Submission",
+      trust2: "Paperless Forms",
+      trust3: "Real-Time Deadlines",
+      applyBtn: "Apply / Register Now",
+      viewFlyer: "View Flyer",
+      deadlineLabel: "Deadline",
+      extendedBadge: "DEADLINE EXTENDED",
+      closingSoonBadge: "CLOSING SOON",
+      activeBadge: "OPEN",
+      closedBadge: "CLOSED"
+    },
+    ta: {
+      banner: "புத்தளம் மாவட்ட பட்டதாரிகள் ஒன்றியம் (UGAP) • உத்தியோகபூர்வ தளம்",
+      heroTag: "இணைந்து தலைமைத்துவத்தை உருவாக்குவோம்",
+      heroHeading: "பதிவுகள் மற்றும் விண்ணப்பங்களுக்கான தளம்",
+      heroSubtitle: "புத்தளம் மாவட்ட பல்கலைக்கழக மாணவர் ஒன்றியத்தின் அனைத்து உத்தியோகபூர்வ திட்டங்களுக்குமான நுழைவாயில்.",
+      trust1: "பாதுகாப்பான விண்ணப்பம்",
+      trust2: "நேரடி கூகிள் படிவங்கள்",
+      trust3: "நேரலை முடிவுத்திகதி",
+      applyBtn: "இன்றே விண்ணப்பிக்க",
+      viewFlyer: "போஸ்டர் காண்க",
+      deadlineLabel: "முடிவுத் திகதி",
+      extendedBadge: "காலக்கெடு நீடிக்கப்பட்டது",
+      closingSoonBadge: "விரைவில் நிறைவடையும்",
+      activeBadge: "பதிவுகள் ஆரம்பம்",
+      closedBadge: "நிறைவடைந்தது"
     }
+  };
 
-    function initLocalData() {
+  let currentLang = 'en';
+  let isAdminActive = false;
+  let currentFilter = 'all';
+  let opportunities = [];
+  let currentFlyerData = '';
+
+  // Transform Database Row -> JavaScript Model
+  function mapFromDb(row) {
+    return {
+      id: row.id,
+      titleEn: row.title_en,
+      titleTa: row.title_ta || '',
+      category: row.category,
+      eligibility: row.eligibility,
+      formUrl: row.form_url,
+      flyerUrl: row.flyer_url || '',
+      deadline: row.deadline,
+      isExtended: Boolean(row.is_extended),
+      status: row.status || 'open',
+      descEn: row.desc_en || ''
+    };
+  }
+
+  // Transform JavaScript Model -> Database Row
+  function mapToDb(item) {
+    return {
+      id: item.id,
+      title_en: item.titleEn,
+      title_ta: item.titleTa || '',
+      category: item.category,
+      eligibility: item.eligibility,
+      form_url: item.formUrl,
+      flyer_url: item.flyerUrl || '',
+      deadline: item.deadline,
+      is_extended: Boolean(item.isExtended),
+      status: item.status || 'open',
+      desc_en: item.descEn || ''
+    };
+  }
+
+  function updateCloudIndicator(status) {
+    const dot = document.getElementById('cloudDot');
+    const text = document.getElementById('cloudStatusText');
+    if (!dot || !text) return;
+
+    if (status === 'live') {
+      dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse";
+      text.textContent = "Live Cloud Sync";
+      text.className = "font-medium text-emerald-300";
+    } else if (status === 'connecting') {
+      dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping";
+      text.textContent = "Connecting...";
+      text.className = "font-medium text-amber-300";
+    } else {
+      dot.className = "w-1.5 h-1.5 rounded-full bg-slate-500";
+      text.textContent = "Local Storage";
+      text.className = "font-medium text-slate-400";
+    }
+  }
+
+  async function initDatabase() {
+    updateCloudIndicator('connecting');
+
+    if (supabaseClient) {
       try {
-        const saved = localStorage.getItem('ugap_portal_items_v2');
-        if (saved) {
-          opportunities = JSON.parse(saved);
-        } else {
-          opportunities = DEFAULT_OPPORTUNITIES;
-          saveLocalData();
+        const { data, error } = await supabaseClient
+          .from('opportunities')
+          .select('*')
+          .order('deadline', { ascending: false });
+
+        if (!error) {
+          if (data && data.length > 0) {
+            opportunities = data.map(mapFromDb);
+          } else {
+            // Seed initial records into Supabase if empty
+            for (const item of DEFAULT_OPPORTUNITIES) {
+              await supabaseClient.from('opportunities').upsert(mapToDb(item));
+            }
+            opportunities = DEFAULT_OPPORTUNITIES;
+          }
+
+          updateCloudIndicator('live');
+          renderOpportunities();
+          window.updateHeroCountdownSpotlight();
+
+          // Real-time listener: syncs instantly across devices
+          supabaseClient
+            .channel('opportunities-realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'opportunities' }, async () => {
+              const { data: refreshed } = await supabaseClient
+                .from('opportunities')
+                .select('*')
+                .order('deadline', { ascending: false });
+              if (refreshed) {
+                opportunities = refreshed.map(mapFromDb);
+                renderOpportunities();
+                window.updateHeroCountdownSpotlight();
+              }
+            })
+            .subscribe();
+
+          return;
         }
       } catch (err) {
-        opportunities = DEFAULT_OPPORTUNITIES;
+        console.warn("Supabase connection fallback:", err);
       }
-      renderOpportunities();
-      updateHeroCountdownSpotlight();
     }
 
-    function saveLocalData() {
+    // Fallback if keys are not ready
+    updateCloudIndicator('offline');
+    try {
+      const saved = localStorage.getItem('ugap_portal_items_v2');
+      opportunities = saved ? JSON.parse(saved) : DEFAULT_OPPORTUNITIES;
+    } catch {
+      opportunities = DEFAULT_OPPORTUNITIES;
+    }
+    renderOpportunities();
+    window.updateHeroCountdownSpotlight();
+  }
+
+  async function saveOpportunityToCloud(item) {
+    if (supabaseClient) {
       try {
-        localStorage.setItem('ugap_portal_items_v2', JSON.stringify(opportunities));
-      } catch (err) {
-        console.warn("Storage quota warning", err);
+        await supabaseClient.from('opportunities').upsert(mapToDb(item));
+      } catch (e) {
+        console.error("Supabase upsert error:", e);
       }
     }
+    const idx = opportunities.findIndex(o => o.id === item.id);
+    if (idx >= 0) opportunities[idx] = item;
+    else opportunities.unshift(item);
 
-    function showToast(message) {
-      const toast = document.getElementById('toast');
-      const toastMsg = document.getElementById('toastMsg');
-      if (!toast || !toastMsg) return;
-      toastMsg.textContent = message;
-      toast.classList.remove('hidden');
-      setTimeout(() => {
-        toast.classList.add('hidden');
-      }, 3500);
+    try { localStorage.setItem('ugap_portal_items_v2', JSON.stringify(opportunities)); } catch (e) {}
+    renderOpportunities();
+    window.updateHeroCountdownSpotlight();
+  }
+
+  async function deleteOpportunityFromCloud(id) {
+    if (supabaseClient) {
+      try {
+        await supabaseClient.from('opportunities').delete().eq('id', id);
+      } catch (e) {
+        console.error("Supabase delete error:", e);
+      }
     }
+    opportunities = opportunities.filter(o => o.id !== id);
+    try { localStorage.setItem('ugap_portal_items_v2', JSON.stringify(opportunities)); } catch (e) {}
+    renderOpportunities();
+    window.updateHeroCountdownSpotlight();
+  }
 
-    window.updateHeroCountdownSpotlight = function() {
-      const spotlightCard = document.getElementById('heroCountdownCard');
-      if (!spotlightCard) return;
+  function showToast(message) {
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+    if (!toast || !toastMsg) return;
+    toastMsg.textContent = message;
+    toast.classList.remove('hidden');
+    setTimeout(() => { toast.classList.add('hidden'); }, 3500);
+  }
 
-      const now = Date.now();
-      const activeItems = opportunities.filter(o => {
-        const d = new Date(o.deadline).getTime();
-        return o.status === 'open' && d > now;
-      }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+  window.updateHeroCountdownSpotlight = function() {
+    const spotlightCard = document.getElementById('heroCountdownCard');
+    if (!spotlightCard) return;
 
-      if (activeItems.length === 0) {
-        const targetTitle = document.getElementById('countdownTargetTitle');
-        if (targetTitle) targetTitle.textContent = "Undergraduates' Association - Puttalam • Empowering Regional Leaders";
-        const dEl = document.getElementById('cdDays');
-        const hEl = document.getElementById('cdHours');
-        const mEl = document.getElementById('cdMins');
-        const sEl = document.getElementById('cdSecs');
-        if (dEl) dEl.textContent = "00";
-        if (hEl) hEl.textContent = "00";
-        if (mEl) mEl.textContent = "00";
-        if (sEl) sEl.textContent = "00";
-        return;
-      }
+    const now = Date.now();
+    const activeItems = opportunities.filter(o => {
+      const d = new Date(o.deadline).getTime();
+      return o.status === 'open' && d > now;
+    }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
 
-      const target = activeItems[0];
-      const titleEl = document.getElementById('countdownTargetTitle');
-      if (titleEl) {
-        titleEl.textContent = currentLang === 'ta' && target.titleTa ? target.titleTa : target.titleEn;
-      }
-
-      const diff = new Date(target.deadline).getTime() - now;
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const secs = Math.floor((diff % (1000 * 60)) / 1000);
-
+    if (activeItems.length === 0) {
+      const targetTitle = document.getElementById('countdownTargetTitle');
+      if (targetTitle) targetTitle.textContent = "Undergraduates' Association - Puttalam • Empowering Regional Leaders";
       const dEl = document.getElementById('cdDays');
       const hEl = document.getElementById('cdHours');
       const mEl = document.getElementById('cdMins');
       const sEl = document.getElementById('cdSecs');
-      if (dEl) dEl.textContent = String(Math.max(0, days)).padStart(2, '0');
-      if (hEl) hEl.textContent = String(Math.max(0, hours)).padStart(2, '0');
-      if (mEl) mEl.textContent = String(Math.max(0, mins)).padStart(2, '0');
-      if (sEl) sEl.textContent = String(Math.max(0, secs)).padStart(2, '0');
-
-      const btn = document.getElementById('countdownActionBtn');
-      if (btn) {
-        btn.onclick = () => {
-          window.triggerConfetti();
-          window.openEmbeddedForm(target.id);
-        };
-      }
-    };
-
-    function calculateTimeStatus(deadlineIso) {
-      const now = new Date().getTime();
-      const target = new Date(deadlineIso).getTime();
-      const diff = target - now;
-
-      if (diff <= 0) {
-        return { isClosed: true, isClosingSoon: false, text: "Closed" };
-      }
-      
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-
-      if (days < 3) {
-        return { 
-          isClosed: false, 
-          isClosingSoon: true, 
-          text: days === 0 ? `${hours}h remaining` : `${days}d ${hours}h remaining` 
-        };
-      }
-
-      return { isClosed: false, isClosingSoon: false, text: `${days} days left` };
+      if (dEl) dEl.textContent = "00";
+      if (hEl) hEl.textContent = "00";
+      if (mEl) mEl.textContent = "00";
+      if (sEl) sEl.textContent = "00";
+      return;
     }
 
-    function formatDateDisplay(isoString) {
-      try {
-        const d = new Date(isoString);
-        return d.toLocaleDateString(currentLang === 'ta' ? 'ta-LK' : 'en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      } catch {
-        return isoString;
-      }
+    const target = activeItems[0];
+    const titleEl = document.getElementById('countdownTargetTitle');
+    if (titleEl) {
+      titleEl.textContent = currentLang === 'ta' && target.titleTa ? target.titleTa : target.titleEn;
     }
 
-    window.addToGoogleCalendar = function(id) {
-      const item = opportunities.find(o => o.id === id);
-      if (!item) return;
-      const title = encodeURIComponent(item.titleEn);
-      const details = encodeURIComponent(`${item.descEn || ''}\n\nOfficial Registration Form: ${item.formUrl}`);
-      const deadlineDate = new Date(item.deadline);
-      const startStr = deadlineDate.toISOString().replace(/-|:|\.\d+/g, '');
-      const endDate = new Date(deadlineDate.getTime() + 60 * 60 * 1000);
-      const endStr = endDate.toISOString().replace(/-|:|\.\d+/g, '');
-      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${startStr}/${endStr}`;
-      window.open(url, '_blank', 'noopener,noreferrer');
-      window.triggerConfetti();
-    };
+    const diff = new Date(target.deadline).getTime() - now;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const secs = Math.floor((diff % (1000 * 60)) / 1000);
 
-    window.shareOpportunity = async function(id) {
-      const item = opportunities.find(o => o.id === id);
-      if (!item) return;
-      const title = item.titleEn;
-      const url = window.location.href;
-      const shareText = `🎓 ${title} | Undergraduates' Association - Puttalam\nDeadline: ${formatDateDisplay(item.deadline)}\nApply directly:`;
+    const dEl = document.getElementById('cdDays');
+    const hEl = document.getElementById('cdHours');
+    const mEl = document.getElementById('cdMins');
+    const sEl = document.getElementById('cdSecs');
+    if (dEl) dEl.textContent = String(Math.max(0, days)).padStart(2, '0');
+    if (hEl) hEl.textContent = String(Math.max(0, hours)).padStart(2, '0');
+    if (mEl) mEl.textContent = String(Math.max(0, mins)).padStart(2, '0');
+    if (sEl) sEl.textContent = String(Math.max(0, secs)).padStart(2, '0');
 
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: title,
-            text: shareText,
-            url: url
-          });
-          window.triggerConfetti();
-          return;
-        } catch (e) {
-          // Fallback to clipboard
-        }
-      }
-
-      const tempInput = document.createElement('textarea');
-      tempInput.value = `${shareText} ${url}`;
-      document.body.appendChild(tempInput);
-      tempInput.select();
-      try {
-        document.execCommand('copy');
-        showToast("Opportunity link copied to clipboard!");
+    const btn = document.getElementById('countdownActionBtn');
+    if (btn) {
+      btn.onclick = () => {
         window.triggerConfetti();
-      } catch (err) {
-        showToast("Registration link ready!");
-      }
-      document.body.removeChild(tempInput);
-    };
+        window.openEmbeddedForm(target.id);
+      };
+    }
+  };
 
-    function renderOpportunities() {
-      const container = document.getElementById('opportunitiesContainer');
-      const emptyState = document.getElementById('emptyState');
-      if (!container) return;
+  function calculateTimeStatus(deadlineIso) {
+    const now = new Date().getTime();
+    const target = new Date(deadlineIso).getTime();
+    const diff = target - now;
 
-      // Update Category Badge Counters
-      let totalAll = opportunities.length;
-      let totalOpen = 0;
-      let totalClosingSoon = 0;
-      let totalClosed = 0;
+    if (diff <= 0) return { isClosed: true, isClosingSoon: false, text: "Closed" };
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-      opportunities.forEach(item => {
-        const timeStatus = calculateTimeStatus(item.deadline);
-        const isOpen = item.status === 'open' && !timeStatus.isClosed;
-        if (isOpen) {
-          totalOpen++;
-          if (timeStatus.isClosingSoon) totalClosingSoon++;
-        } else {
-          totalClosed++;
-        }
+    if (days < 3) {
+      return { 
+        isClosed: false, 
+        isClosingSoon: true, 
+        text: days === 0 ? `${hours}h remaining` : `${days}d ${hours}h remaining` 
+      };
+    }
+    return { isClosed: false, isClosingSoon: false, text: `${days} days left` };
+  }
+
+  function formatDateDisplay(isoString) {
+    try {
+      const d = new Date(isoString);
+      return d.toLocaleDateString(currentLang === 'ta' ? 'ta-LK' : 'en-US', {
+        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
       });
+    } catch {
+      return isoString;
+    }
+  }
 
-      const cAll = document.getElementById('countAll');
-      const cOpen = document.getElementById('countOpen');
-      const cCS = document.getElementById('countClosingSoon');
-      const cClosed = document.getElementById('countClosed');
-      if (cAll) cAll.textContent = totalAll;
-      if (cOpen) cOpen.textContent = totalOpen;
-      if (cCS) cCS.textContent = totalClosingSoon;
-      if (cClosed) cClosed.textContent = totalClosed;
+  window.addToGoogleCalendar = function(id) {
+    const item = opportunities.find(o => o.id === id);
+    if (!item) return;
+    const title = encodeURIComponent(item.titleEn);
+    const details = encodeURIComponent(`${item.descEn || ''}\n\nOfficial Registration Form: ${item.formUrl}`);
+    const deadlineDate = new Date(item.deadline);
+    const startStr = deadlineDate.toISOString().replace(/-|:|\.\d+/g, '');
+    const endDate = new Date(deadlineDate.getTime() + 60 * 60 * 1000);
+    const endStr = endDate.toISOString().replace(/-|:|\.\d+/g, '');
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${startStr}/${endStr}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    window.triggerConfetti();
+  };
 
-      const filtered = opportunities.filter(item => {
-        const timeStatus = calculateTimeStatus(item.deadline);
-        const isOpen = item.status === 'open' && !timeStatus.isClosed;
+  window.shareOpportunity = async function(id) {
+    const item = opportunities.find(o => o.id === id);
+    if (!item) return;
+    const title = item.titleEn;
+    const url = window.location.href;
+    const shareText = `🎓 ${title} | Undergraduates' Association - Puttalam\nDeadline: ${formatDateDisplay(item.deadline)}\nApply directly:`;
 
-        if (currentFilter === 'open' && !isOpen) return false;
-        if (currentFilter === 'closing-soon' && (!isOpen || !timeStatus.isClosingSoon)) return false;
-        if (currentFilter === 'closed' && isOpen) return false;
-        return true;
-      });
-
-      if (filtered.length === 0) {
-        container.innerHTML = '';
-        if (emptyState) emptyState.classList.remove('hidden');
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: title, text: shareText, url: url });
+        window.triggerConfetti();
         return;
+      } catch (e) {}
+    }
+
+    const tempInput = document.createElement('textarea');
+    tempInput.value = `${shareText} ${url}`;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    try {
+      document.execCommand('copy');
+      showToast("Opportunity link copied to clipboard!");
+      window.triggerConfetti();
+    } catch (err) {
+      showToast("Registration link ready!");
+    }
+    document.body.removeChild(tempInput);
+  };
+
+  function renderOpportunities() {
+    const container = document.getElementById('opportunitiesContainer');
+    const emptyState = document.getElementById('emptyState');
+    if (!container) return;
+
+    let totalAll = opportunities.length;
+    let totalOpen = 0;
+    let totalClosingSoon = 0;
+    let totalClosed = 0;
+
+    opportunities.forEach(item => {
+      const timeStatus = calculateTimeStatus(item.deadline);
+      const isOpen = item.status === 'open' && !timeStatus.isClosed;
+      if (isOpen) {
+        totalOpen++;
+        if (timeStatus.isClosingSoon) totalClosingSoon++;
+      } else {
+        totalClosed++;
+      }
+    });
+
+    const cAll = document.getElementById('countAll');
+    const cOpen = document.getElementById('countOpen');
+    const cCS = document.getElementById('countClosingSoon');
+    const cClosed = document.getElementById('countClosed');
+    if (cAll) cAll.textContent = totalAll;
+    if (cOpen) cOpen.textContent = totalOpen;
+    if (cCS) cCS.textContent = totalClosingSoon;
+    if (cClosed) cClosed.textContent = totalClosed;
+
+    const filtered = opportunities.filter(item => {
+      const timeStatus = calculateTimeStatus(item.deadline);
+      const isOpen = item.status === 'open' && !timeStatus.isClosed;
+
+      if (currentFilter === 'open' && !isOpen) return false;
+      if (currentFilter === 'closing-soon' && (!isOpen || !timeStatus.isClosingSoon)) return false;
+      if (currentFilter === 'closed' && isOpen) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = '';
+      if (emptyState) emptyState.classList.remove('hidden');
+      return;
+    }
+
+    if (emptyState) emptyState.classList.add('hidden');
+    const t = I18N[currentLang];
+
+    container.innerHTML = filtered.map(item => {
+      const timeStatus = calculateTimeStatus(item.deadline);
+      const isCurrentlyOpen = item.status === 'open' && !timeStatus.isClosed;
+      const title = currentLang === 'ta' && item.titleTa ? item.titleTa : item.titleEn;
+
+      let badgeHtml = '';
+      if (!isCurrentlyOpen) {
+        badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700 uppercase">${t.closedBadge}</span>`;
+      } else if (item.isExtended) {
+        badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700 uppercase animate-pulse flex items-center gap-1">
+          <i data-lucide="zap" class="w-3 h-3 text-amber-600 dark:text-amber-400"></i> ${t.extendedBadge}
+        </span>`;
+      } else if (timeStatus.isClosingSoon) {
+        badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 uppercase flex items-center gap-1">
+          <i data-lucide="alert-circle" class="w-3 h-3 text-red-600 dark:text-red-400"></i> ${t.closingSoonBadge}
+        </span>`;
+      } else {
+        badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 uppercase">${t.activeBadge}</span>`;
       }
 
-      if (emptyState) emptyState.classList.add('hidden');
-      const t = I18N[currentLang];
+      let flyerHtml = '';
+      if (item.flyerUrl) {
+        flyerHtml = `
+          <div class="relative h-44 w-full bg-slate-900 overflow-hidden group cursor-pointer" onclick="openFlyerLightbox('${item.id}')">
+            <img src="${item.flyerUrl}" alt="${item.titleEn}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-95" onerror="this.parentElement.style.display='none'" />
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent flex items-end p-3">
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs text-[10px] font-bold text-slate-800 dark:text-amber-300 shadow-xs">
+                <i data-lucide="maximize-2" class="w-3 h-3 text-amber-600"></i> ${t.viewFlyer}
+              </span>
+            </div>
+          </div>
+        `;
+      }
 
-      container.innerHTML = filtered.map(item => {
-        const timeStatus = calculateTimeStatus(item.deadline);
-        const isCurrentlyOpen = item.status === 'open' && !timeStatus.isClosed;
-        const title = currentLang === 'ta' && item.titleTa ? item.titleTa : item.titleEn;
+      let adminActionHtml = '';
+      if (isAdminActive) {
+        adminActionHtml = `
+          <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-1 text-[11px] flex-wrap">
+            <div class="flex items-center gap-1">
+              <button onclick="promptEditOpportunity('${item.id}')" class="px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 font-semibold flex items-center gap-1 cursor-pointer" title="Edit Opening">
+                <i data-lucide="edit-3" class="w-3 h-3"></i> Edit
+              </button>
+              <button onclick="duplicateOpportunity('${item.id}')" class="px-2 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 font-semibold flex items-center gap-1 cursor-pointer" title="Clone Opening">
+                <i data-lucide="copy" class="w-3 h-3"></i> Clone
+              </button>
+              <button onclick="promptExtendDeadline('${item.id}')" class="px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 font-semibold flex items-center gap-1 cursor-pointer" title="Extend Deadline">
+                <i data-lucide="calendar-plus" class="w-3 h-3 text-amber-600"></i> Extend
+              </button>
+            </div>
 
-        // Status Badges
-        let badgeHtml = '';
-        if (!isCurrentlyOpen) {
-          badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700 uppercase">${t.closedBadge}</span>`;
-        } else if (item.isExtended) {
-          badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700 uppercase animate-pulse flex items-center gap-1">
-            <i data-lucide="zap" class="w-3 h-3 text-amber-600 dark:text-amber-400"></i> ${t.extendedBadge}
-          </span>`;
-        } else if (timeStatus.isClosingSoon) {
-          badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 uppercase flex items-center gap-1">
-            <i data-lucide="alert-circle" class="w-3 h-3 text-red-600 dark:text-red-400"></i> ${t.closingSoonBadge}
-          </span>`;
-        } else {
-          badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 uppercase">${t.activeBadge}</span>`;
-        }
+            <div class="flex items-center gap-1">
+              <button onclick="toggleItemStatus('${item.id}')" class="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer">
+                ${item.status === 'open' ? 'Force Close' : 'Reopen'}
+              </button>
+              <button onclick="promptDeleteItem('${item.id}')" class="p-1 text-slate-400 hover:text-red-600 transition-colors cursor-pointer" title="Delete">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }
 
-        // Flyer Thumbnail
-        let flyerHtml = '';
-        if (item.flyerUrl) {
-          flyerHtml = `
-            <div class="relative h-44 w-full bg-slate-900 overflow-hidden group cursor-pointer" onclick="openFlyerLightbox('${item.id}')">
-              <img src="${item.flyerUrl}" alt="${item.titleEn}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-95" onerror="this.parentElement.style.display='none'" />
-              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent flex items-end p-3">
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs text-[10px] font-bold text-slate-800 dark:text-amber-300 shadow-xs">
-                  <i data-lucide="maximize-2" class="w-3 h-3 text-amber-600"></i> ${t.viewFlyer}
+      return `
+        <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between theme-transition">
+          <div>
+            ${flyerHtml}
+            <div class="p-4 sm:p-5">
+              <div class="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
+                  <i data-lucide="tag" class="w-2.5 h-2.5"></i> ${item.category}
+                </span>
+                ${badgeHtml}
+              </div>
+
+              <h3 class="font-display font-bold text-slate-900 dark:text-white text-base leading-snug mb-2 line-clamp-2">
+                ${title}
+              </h3>
+
+              <p class="text-xs text-slate-500 dark:text-slate-400 flex items-start gap-1.5 mb-3">
+                <i data-lucide="users" class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 mt-0.5 shrink-0"></i>
+                <span class="line-clamp-2"><strong>Eligibility:</strong> ${item.eligibility}</span>
+              </p>
+
+              <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-2.5 border border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 mb-3">
+                <span class="flex items-center gap-1.5 text-[11px]">
+                  <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400"></i>
+                  <span>${t.deadlineLabel}: <strong>${formatDateDisplay(item.deadline)}</strong></span>
+                </span>
+                <span class="font-bold text-[10px] px-2 py-0.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 ${timeStatus.isClosingSoon ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300'}">
+                  ${timeStatus.text}
                 </span>
               </div>
             </div>
-          `;
-        }
-
-        // Admin Controls (Visible only during active session: Edit, Clone, Extend, Status, Delete)
-        let adminActionHtml = '';
-        if (isAdminActive) {
-          adminActionHtml = `
-            <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-1 text-[11px] flex-wrap">
-              <div class="flex items-center gap-1">
-                <button onclick="promptEditOpportunity('${item.id}')" class="px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 font-semibold flex items-center gap-1 cursor-pointer" title="Edit Opening">
-                  <i data-lucide="edit-3" class="w-3 h-3"></i> Edit
-                </button>
-                <button onclick="duplicateOpportunity('${item.id}')" class="px-2 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 font-semibold flex items-center gap-1 cursor-pointer" title="Clone Opening">
-                  <i data-lucide="copy" class="w-3 h-3"></i> Clone
-                </button>
-                <button onclick="promptExtendDeadline('${item.id}')" class="px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 font-semibold flex items-center gap-1 cursor-pointer" title="Extend Deadline">
-                  <i data-lucide="calendar-plus" class="w-3 h-3 text-amber-600"></i> Extend
-                </button>
-              </div>
-
-              <div class="flex items-center gap-1">
-                <button onclick="toggleItemStatus('${item.id}')" class="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer">
-                  ${item.status === 'open' ? 'Force Close' : 'Reopen'}
-                </button>
-                <button onclick="promptDeleteItem('${item.id}')" class="p-1 text-slate-400 hover:text-red-600 transition-colors cursor-pointer" title="Delete">
-                  <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
-              </div>
-            </div>
-          `;
-        }
-
-        return `
-          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between theme-transition">
-            <div>
-              ${flyerHtml}
-              <div class="p-4 sm:p-5">
-                
-                <!-- Category & Status Row -->
-                <div class="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
-                  <span class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
-                    <i data-lucide="tag" class="w-2.5 h-2.5"></i> ${item.category}
-                  </span>
-                  ${badgeHtml}
-                </div>
-
-                <!-- Title -->
-                <h3 class="font-display font-bold text-slate-900 dark:text-white text-base leading-snug mb-2 line-clamp-2">
-                  ${title}
-                </h3>
-
-                <!-- Eligibility -->
-                <p class="text-xs text-slate-500 dark:text-slate-400 flex items-start gap-1.5 mb-3">
-                  <i data-lucide="users" class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 mt-0.5 shrink-0"></i>
-                  <span class="line-clamp-2"><strong>Eligibility:</strong> ${item.eligibility}</span>
-                </p>
-
-                <!-- Deadline countdown pill -->
-                <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-2.5 border border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 mb-3">
-                  <span class="flex items-center gap-1.5 text-[11px]">
-                    <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400"></i>
-                    <span>${t.deadlineLabel}: <strong>${formatDateDisplay(item.deadline)}</strong></span>
-                  </span>
-                  <span class="font-bold text-[10px] px-2 py-0.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 ${timeStatus.isClosingSoon ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300'}">
-                    ${timeStatus.text}
-                  </span>
-                </div>
-
-              </div>
-            </div>
-
-            <!-- Card Bottom Actions & Utilities -->
-            <div class="p-4 sm:p-5 pt-0">
-              <div class="flex items-center gap-2 mb-2">
-                <button 
-                  onclick="openEmbeddedForm('${item.id}')" 
-                  class="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer ${
-                    isCurrentlyOpen 
-                      ? 'bg-brand-navy dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-400 text-amber-300 dark:text-slate-950 active:scale-[0.99]' 
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
-                  }"
-                  ${!isCurrentlyOpen ? 'disabled' : ''}
-                >
-                  <i data-lucide="file-edit" class="w-3.5 h-3.5"></i>
-                  <span>${isCurrentlyOpen ? t.applyBtn : t.closedBadge}</span>
-                </button>
-
-                <!-- Share Button -->
-                <button onclick="shareOpportunity('${item.id}')" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer" title="Share Registration Link">
-                  <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
-                </button>
-
-                <!-- Calendar Reminder Button -->
-                ${isCurrentlyOpen ? `
-                  <button onclick="addToGoogleCalendar('${item.id}')" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer" title="Add to Google Calendar">
-                    <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-amber-600"></i>
-                  </button>
-                ` : ''}
-              </div>
-
-              ${adminActionHtml}
-            </div>
-
           </div>
-        `;
-      }).join('');
 
+          <div class="p-4 sm:p-5 pt-0">
+            <div class="flex items-center gap-2 mb-2">
+              <button 
+                onclick="openEmbeddedForm('${item.id}')" 
+                class="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer ${
+                  isCurrentlyOpen 
+                    ? 'bg-brand-navy dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-400 text-amber-300 dark:text-slate-950 active:scale-[0.99]' 
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                }"
+                ${!isCurrentlyOpen ? 'disabled' : ''}
+              >
+                <i data-lucide="file-edit" class="w-3.5 h-3.5"></i>
+                <span>${isCurrentlyOpen ? t.applyBtn : t.closedBadge}</span>
+              </button>
+
+              <button onclick="shareOpportunity('${item.id}')" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer" title="Share Registration Link">
+                <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              </button>
+
+              ${isCurrentlyOpen ? `
+                <button onclick="addToGoogleCalendar('${item.id}')" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer" title="Add to Google Calendar">
+                  <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-amber-600"></i>
+                </button>
+              ` : ''}
+            </div>
+
+            ${adminActionHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    window.safeCreateIcons();
+  }
+
+  window.openEmbeddedForm = function(id) {
+    const item = opportunities.find(o => o.id === id);
+    if (!item) return;
+
+    const modal = document.getElementById('formEmbedModal');
+    const iframe = document.getElementById('googleFormIframe');
+    const spinner = document.getElementById('formLoadingSpinner');
+    const title = document.getElementById('formModalTitle');
+    const deadline = document.getElementById('formModalDeadline');
+    const extLink = document.getElementById('formExternalLink');
+
+    if (!modal || !iframe) return;
+
+    if (title) title.textContent = currentLang === 'ta' && item.titleTa ? item.titleTa : item.titleEn;
+    if (deadline) deadline.innerHTML = `<i data-lucide="clock" class="w-3 h-3 text-amber-600"></i> ${formatDateDisplay(item.deadline)}`;
+    if (extLink) extLink.href = item.formUrl;
+
+    let embedUrl = item.formUrl;
+    if (embedUrl.includes('docs.google.com/forms') && !embedUrl.includes('embedded=true')) {
+      embedUrl += (embedUrl.includes('?') ? '&' : '?') + 'embedded=true';
+    }
+
+    if (spinner) spinner.style.display = 'flex';
+    iframe.src = embedUrl;
+
+    iframe.onload = () => { if (spinner) spinner.style.display = 'none'; };
+
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    window.safeCreateIcons();
+    window.triggerConfetti();
+  };
+
+  window.closeEmbeddedForm = function() {
+    const modal = document.getElementById('formEmbedModal');
+    const iframe = document.getElementById('googleFormIframe');
+    if (modal) modal.classList.add('hidden');
+    if (iframe) iframe.src = '';
+    document.body.style.overflow = '';
+  };
+
+  window.openFlyerLightbox = function(id) {
+    const item = opportunities.find(o => o.id === id);
+    if (!item || !item.flyerUrl) return;
+
+    const modal = document.getElementById('flyerLightboxModal');
+    const img = document.getElementById('flyerLightboxImg');
+    const title = document.getElementById('flyerLightboxTitle');
+    const dl = document.getElementById('flyerLightboxDownload');
+
+    if (img) img.src = item.flyerUrl;
+    if (title) title.textContent = item.titleEn;
+    if (dl) dl.href = item.flyerUrl;
+
+    if (modal) modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeFlyerLightbox = function() {
+    const modal = document.getElementById('flyerLightboxModal');
+    const img = document.getElementById('flyerLightboxImg');
+    if (modal) modal.classList.add('hidden');
+    if (img) img.src = '';
+    document.body.style.overflow = '';
+  };
+
+  function openPasscodeModal() {
+    if (isAdminActive) {
+      showCustomConfirm("Lock Admin Session", "Deactivate editorial controls and lock portal back to visitor mode?", () => {
+        setAdminState(false);
+        showToast("Admin session locked.");
+      });
+      return;
+    }
+    const err = document.getElementById('passcodeError');
+    const input = document.getElementById('adminPasscodeInput');
+    const modal = document.getElementById('passcodeModal');
+
+    if (err) err.classList.add('hidden');
+    if (input) input.value = '';
+    if (modal) modal.classList.remove('hidden');
+    if (input) input.focus();
+  }
+
+  function setAdminState(active) {
+    isAdminActive = active;
+    const bar = document.getElementById('adminControlsBar');
+    const statusText = document.getElementById('adminStatusText');
+    const deactivateTopBtn = document.getElementById('adminDeactivateTopBtn');
+
+    if (active) {
+      if (bar) bar.classList.remove('hidden');
+      if (statusText) statusText.textContent = "Admin Active";
+      if (deactivateTopBtn) {
+        deactivateTopBtn.classList.remove('hidden');
+        deactivateTopBtn.classList.add('inline-flex');
+      }
+    } else {
+      if (bar) bar.classList.add('hidden');
+      if (statusText) statusText.textContent = "Admin Gate";
+      if (deactivateTopBtn) {
+        deactivateTopBtn.classList.add('hidden');
+        deactivateTopBtn.classList.remove('inline-flex');
+      }
+    }
+    renderOpportunities();
+  }
+
+  let pendingConfirmAction = null;
+  function showCustomConfirm(title, desc, action) {
+    const titleEl = document.getElementById('confirmModalTitle');
+    const descEl = document.getElementById('confirmModalDesc');
+    const modal = document.getElementById('confirmModal');
+
+    if (titleEl) titleEl.textContent = title;
+    if (descEl) descEl.textContent = desc;
+    pendingConfirmAction = action;
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  function resetFlyerAttachment() {
+    currentFlyerData = '';
+    const fileInput = document.getElementById('flyerFileInput');
+    const urlInput = document.getElementById('inputFlyerUrl');
+    const previewCont = document.getElementById('flyerPreviewContainer');
+    const previewThumb = document.getElementById('flyerPreviewThumb');
+
+    if (fileInput) fileInput.value = '';
+    if (urlInput) urlInput.value = '';
+    if (previewCont) previewCont.classList.add('hidden');
+    if (previewThumb) previewThumb.src = '';
+  }
+
+  function setFlyerPreview(urlOrData, name = "Poster") {
+    currentFlyerData = urlOrData;
+    const previewCont = document.getElementById('flyerPreviewContainer');
+    const previewThumb = document.getElementById('flyerPreviewThumb');
+    const previewName = document.getElementById('flyerPreviewName');
+    const urlInput = document.getElementById('inputFlyerUrl');
+
+    if (urlOrData) {
+      if (previewThumb) previewThumb.src = urlOrData;
+      if (previewName) previewName.textContent = name;
+      if (previewCont) previewCont.classList.remove('hidden');
+      if (urlInput) urlInput.value = urlOrData.startsWith('data:') ? '' : urlOrData;
+    } else {
+      resetFlyerAttachment();
+    }
+  }
+
+  window.promptEditOpportunity = function(id) {
+    const item = opportunities.find(o => o.id === id);
+    if (!item) return;
+
+    document.getElementById('editOpportunityId').value = item.id;
+    document.getElementById('inputTitleEn').value = item.titleEn || '';
+    document.getElementById('inputTitleTa').value = item.titleTa || '';
+    document.getElementById('inputCategory').value = item.category || '';
+    document.getElementById('inputEligibility').value = item.eligibility || '';
+    document.getElementById('inputFormUrl').value = item.formUrl || '';
+    document.getElementById('inputDescEn').value = item.descEn || '';
+
+    try {
+      const d = new Date(item.deadline);
+      const pad = (n) => String(n).padStart(2, '0');
+      const formatted = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      document.getElementById('inputDeadline').value = formatted;
+    } catch (e) {
+      document.getElementById('inputDeadline').value = '';
+    }
+
+    if (item.flyerUrl) {
+      setFlyerPreview(item.flyerUrl, "Existing Flyer");
+    } else {
+      resetFlyerAttachment();
+    }
+
+    document.getElementById('modalDispatchBadge').textContent = "Update Dispatch";
+    document.getElementById('createModalHeading').textContent = "Edit Registration Opening";
+    document.getElementById('submitCreateBtn').textContent = "Save Changes";
+
+    const modal = document.getElementById('createModal');
+    if (modal) modal.classList.remove('hidden');
+  };
+
+  window.duplicateOpportunity = async function(id) {
+    const item = opportunities.find(o => o.id === id);
+    if (!item) return;
+
+    showCustomConfirm("Duplicate Opening", `Create a clone of "${item.titleEn}"?`, async () => {
+      const clonedItem = {
+        ...item,
+        id: `ugap-${Date.now()}`,
+        titleEn: `${item.titleEn} (Copy)`,
+        titleTa: item.titleTa ? `${item.titleTa} (நகல்)` : '',
+        deadline: new Date(Date.now() + 7 * 86400000).toISOString(),
+        isExtended: false,
+        status: 'open'
+      };
+
+      await saveOpportunityToCloud(clonedItem);
+      showToast("Opening cloned successfully. Ready to edit.");
+      window.triggerConfetti();
+    });
+  };
+
+  function initTheme() {
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const themeIcon = document.getElementById('themeIcon');
+    const themeMeta = document.getElementById('themeColorMeta');
+
+    function updateThemeUI(isDark) {
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        if (themeIcon) themeIcon.setAttribute('data-lucide', 'sun');
+        if (themeMeta) themeMeta.setAttribute('content', '#080E1E');
+        try { localStorage.setItem('ugap_portal_theme', 'dark'); } catch(e){}
+      } else {
+        document.documentElement.classList.remove('dark');
+        if (themeIcon) themeIcon.setAttribute('data-lucide', 'moon');
+        if (themeMeta) themeMeta.setAttribute('content', '#0B132B');
+        try { localStorage.setItem('ugap_portal_theme', 'light'); } catch(e){}
+      }
       window.safeCreateIcons();
     }
 
-    window.openEmbeddedForm = function(id) {
-      const item = opportunities.find(o => o.id === id);
-      if (!item) return;
+    const isCurrentDark = document.documentElement.classList.contains('dark');
+    updateThemeUI(isCurrentDark);
 
-      const modal = document.getElementById('formEmbedModal');
-      const iframe = document.getElementById('googleFormIframe');
-      const spinner = document.getElementById('formLoadingSpinner');
-      const title = document.getElementById('formModalTitle');
-      const deadline = document.getElementById('formModalDeadline');
-      const extLink = document.getElementById('formExternalLink');
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', () => {
+        const currentlyDark = document.documentElement.classList.contains('dark');
+        updateThemeUI(!currentlyDark);
+      });
+    }
+  }
 
-      if (!modal || !iframe) return;
+  let deferredPrompt = null;
+  function initPWA() {
+    try {
+      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+        const swScript = `
+          const CACHE_NAME = 'ugap-pwa-cache-v2';
+          self.addEventListener('install', (e) => { self.skipWaiting(); });
+          self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
+          self.addEventListener('fetch', (e) => {
+            e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+          });
+        `;
+        const blob = new Blob([swScript], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        navigator.serviceWorker.register(swUrl).catch(() => {});
+      }
+    } catch (e) {}
 
-      if (title) title.textContent = currentLang === 'ta' && item.titleTa ? item.titleTa : item.titleEn;
-      if (deadline) deadline.innerHTML = `<i data-lucide="clock" class="w-3 h-3 text-amber-600"></i> ${formatDateDisplay(item.deadline)}`;
-      if (extLink) extLink.href = item.formUrl;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const installBtn = document.getElementById('pwaInstallBtn');
+      if (installBtn) {
+        installBtn.classList.remove('hidden');
+        installBtn.classList.add('inline-flex');
+      }
+    });
 
-      // Google Form embedded reader formatting
-      let embedUrl = item.formUrl;
-      if (embedUrl.includes('docs.google.com/forms')) {
-        if (!embedUrl.includes('embedded=true')) {
-          embedUrl += (embedUrl.includes('?') ? '&' : '?') + 'embedded=true';
+    const installBtn = document.getElementById('pwaInstallBtn');
+    if (installBtn) {
+      installBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          installBtn.classList.add('hidden');
+          installBtn.classList.remove('inline-flex');
+          showToast("UGAP Portal added to home screen!");
+          window.triggerConfetti();
         }
+        deferredPrompt = null;
+      });
+    }
+  }
+
+  window.promptExtendDeadline = function(id) {
+    const item = opportunities.find(o => o.id === id);
+    if (!item) return;
+    const idEl = document.getElementById('extendItemId');
+    const titleEl = document.getElementById('extendItemTitle');
+    const modal = document.getElementById('extendModal');
+
+    if (idEl) idEl.value = id;
+    if (titleEl) titleEl.textContent = item.titleEn;
+    if (modal) modal.classList.remove('hidden');
+  };
+
+  window.toggleItemStatus = async function(id) {
+    const item = opportunities.find(o => o.id === id);
+    if (!item) return;
+    item.status = item.status === 'open' ? 'closed' : 'open';
+    await saveOpportunityToCloud(item);
+    showToast(`Status toggled to: ${item.status.toUpperCase()}`);
+  };
+
+  window.promptDeleteItem = function(id) {
+    showCustomConfirm("Delete Opening", "Are you sure you want to permanently delete this registration opening?", async () => {
+      await deleteOpportunityFromCloud(id);
+      showToast("Registration opening removed.");
+    });
+  };
+
+  function bootApp() {
+    const yrEl = document.getElementById('currentYear');
+    if (yrEl) yrEl.textContent = new Date().getFullYear();
+
+    initTheme();
+    initPWA();
+    initDatabase();
+    window.safeCreateIcons();
+
+    setInterval(window.updateHeroCountdownSpotlight, 1000);
+
+    const langEnBtn = document.getElementById('langEnBtn');
+    const langTaBtn = document.getElementById('langTaBtn');
+
+    if (langEnBtn) langEnBtn.addEventListener('click', () => switchLanguage('en'));
+    if (langTaBtn) langTaBtn.addEventListener('click', () => switchLanguage('ta'));
+
+    function switchLanguage(lang) {
+      currentLang = lang;
+      const t = I18N[lang];
+      
+      if (langEnBtn) {
+        langEnBtn.className = lang === 'en' 
+          ? 'px-2 py-0.5 rounded-md bg-white text-slate-900 font-bold transition-all text-[11px]'
+          : 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition-all text-[11px]';
+      }
+      if (langTaBtn) {
+        langTaBtn.className = lang === 'ta'
+          ? 'px-2 py-0.5 rounded-md bg-white text-slate-900 font-bold transition-all text-[11px]'
+          : 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition-all text-[11px]';
       }
 
-      if (spinner) spinner.style.display = 'flex';
-      iframe.src = embedUrl;
-
-      iframe.onload = () => {
-        if (spinner) spinner.style.display = 'none';
+      const safeText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
       };
 
-      modal.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-      window.safeCreateIcons();
-      window.triggerConfetti();
-    };
+      safeText('topBannerText', t.banner);
+      safeText('heroTag', t.heroTag);
+      safeText('heroHeading', t.heroHeading);
+      safeText('heroSubtitle', t.heroSubtitle);
+      safeText('trust1', t.trust1);
+      safeText('trust2', t.trust2);
+      safeText('trust3', t.trust3);
 
-    window.closeEmbeddedForm = function() {
-      const modal = document.getElementById('formEmbedModal');
-      const iframe = document.getElementById('googleFormIframe');
-      if (modal) modal.classList.add('hidden');
-      if (iframe) iframe.src = '';
-      document.body.style.overflow = '';
-    };
+      renderOpportunities();
+      window.updateHeroCountdownSpotlight();
+    }
 
-    window.openFlyerLightbox = function(id) {
-      const item = opportunities.find(o => o.id === id);
-      if (!item || !item.flyerUrl) return;
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.filter-tab').forEach(t => {
+          t.className = 'filter-tab px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer';
+        });
+        tab.className = 'filter-tab active-tab px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-brand-navy text-amber-300 shadow-xs border border-brand-navy flex items-center gap-1.5 cursor-pointer';
+        currentFilter = tab.dataset.filter;
+        renderOpportunities();
+      });
+    });
 
-      const modal = document.getElementById('flyerLightboxModal');
-      const img = document.getElementById('flyerLightboxImg');
-      const title = document.getElementById('flyerLightboxTitle');
-      const dl = document.getElementById('flyerLightboxDownload');
+    const resetFilterBtn = document.getElementById('resetFilterBtn');
+    if (resetFilterBtn) {
+      resetFilterBtn.addEventListener('click', () => {
+        currentFilter = 'all';
+        const defaultTab = document.querySelector('[data-filter="all"]');
+        if (defaultTab) defaultTab.click();
+      });
+    }
 
-      if (img) img.src = item.flyerUrl;
-      if (title) title.textContent = item.titleEn;
-      if (dl) dl.href = item.flyerUrl;
+    const closeFormBtn = document.getElementById('closeFormModalBtn');
+    if (closeFormBtn) closeFormBtn.addEventListener('click', window.closeEmbeddedForm);
 
-      if (modal) modal.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    };
+    const closeFlyerBtn = document.getElementById('closeFlyerModalBtn');
+    if (closeFlyerBtn) closeFlyerBtn.addEventListener('click', window.closeFlyerLightbox);
 
-    window.closeFlyerLightbox = function() {
-      const modal = document.getElementById('flyerLightboxModal');
-      const img = document.getElementById('flyerLightboxImg');
-      if (modal) modal.classList.add('hidden');
-      if (img) img.src = '';
-      document.body.style.overflow = '';
-    };
+    const adminLoginBtn = document.getElementById('adminLoginBtn');
+    if (adminLoginBtn) adminLoginBtn.addEventListener('click', openPasscodeModal);
 
-    function openPasscodeModal() {
-      if (isAdminActive) {
-        showCustomConfirm("Lock Admin Session", "Deactivate editorial controls and lock portal back to visitor mode?", () => {
+    const adminDeactivateTop = document.getElementById('adminDeactivateTopBtn');
+    if (adminDeactivateTop) {
+      adminDeactivateTop.addEventListener('click', () => {
+        showCustomConfirm("Lock Admin Session", "Deactivate editorial controls?", () => {
           setAdminState(false);
           showToast("Admin session locked.");
         });
-        return;
-      }
-      const err = document.getElementById('passcodeError');
-      const input = document.getElementById('adminPasscodeInput');
-      const modal = document.getElementById('passcodeModal');
-
-      if (err) err.classList.add('hidden');
-      if (input) input.value = '';
-      if (modal) modal.classList.remove('hidden');
-      if (input) input.focus();
-    }
-
-    function setAdminState(active) {
-      isAdminActive = active;
-      const bar = document.getElementById('adminControlsBar');
-      const statusText = document.getElementById('adminStatusText');
-      const deactivateTopBtn = document.getElementById('adminDeactivateTopBtn');
-
-      if (active) {
-        if (bar) bar.classList.remove('hidden');
-        if (statusText) statusText.textContent = "Admin Active";
-        if (deactivateTopBtn) {
-          deactivateTopBtn.classList.remove('hidden');
-          deactivateTopBtn.classList.add('inline-flex');
-        }
-      } else {
-        if (bar) bar.classList.add('hidden');
-        if (statusText) statusText.textContent = "Admin Gate";
-        if (deactivateTopBtn) {
-          deactivateTopBtn.classList.add('hidden');
-          deactivateTopBtn.classList.remove('inline-flex');
-        }
-      }
-      renderOpportunities();
-    }
-
-    let pendingConfirmAction = null;
-    function showCustomConfirm(title, desc, action) {
-      const titleEl = document.getElementById('confirmModalTitle');
-      const descEl = document.getElementById('confirmModalDesc');
-      const modal = document.getElementById('confirmModal');
-
-      if (titleEl) titleEl.textContent = title;
-      if (descEl) descEl.textContent = desc;
-      pendingConfirmAction = action;
-      if (modal) modal.classList.remove('hidden');
-    }
-
-    function resetFlyerAttachment() {
-      currentFlyerData = '';
-      const fileInput = document.getElementById('flyerFileInput');
-      const urlInput = document.getElementById('inputFlyerUrl');
-      const previewCont = document.getElementById('flyerPreviewContainer');
-      const previewThumb = document.getElementById('flyerPreviewThumb');
-
-      if (fileInput) fileInput.value = '';
-      if (urlInput) urlInput.value = '';
-      if (previewCont) previewCont.classList.add('hidden');
-      if (previewThumb) previewThumb.src = '';
-    }
-
-    function setFlyerPreview(urlOrData, name = "Poster") {
-      currentFlyerData = urlOrData;
-      const previewCont = document.getElementById('flyerPreviewContainer');
-      const previewThumb = document.getElementById('flyerPreviewThumb');
-      const previewName = document.getElementById('flyerPreviewName');
-      const urlInput = document.getElementById('inputFlyerUrl');
-
-      if (urlOrData) {
-        if (previewThumb) previewThumb.src = urlOrData;
-        if (previewName) previewName.textContent = name;
-        if (previewCont) previewCont.classList.remove('hidden');
-        if (urlInput) urlInput.value = urlOrData.startsWith('data:') ? '' : urlOrData;
-      } else {
-        resetFlyerAttachment();
-      }
-    }
-
-    window.promptEditOpportunity = function(id) {
-      const item = opportunities.find(o => o.id === id);
-      if (!item) return;
-
-      document.getElementById('editOpportunityId').value = item.id;
-      document.getElementById('inputTitleEn').value = item.titleEn || '';
-      document.getElementById('inputTitleTa').value = item.titleTa || '';
-      document.getElementById('inputCategory').value = item.category || '';
-      document.getElementById('inputEligibility').value = item.eligibility || '';
-      document.getElementById('inputFormUrl').value = item.formUrl || '';
-      document.getElementById('inputDescEn').value = item.descEn || '';
-
-      try {
-        const d = new Date(item.deadline);
-        const pad = (n) => String(n).padStart(2, '0');
-        const formatted = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-        document.getElementById('inputDeadline').value = formatted;
-      } catch (e) {
-        document.getElementById('inputDeadline').value = '';
-      }
-
-      if (item.flyerUrl) {
-        setFlyerPreview(item.flyerUrl, "Existing Flyer");
-      } else {
-        resetFlyerAttachment();
-      }
-
-      document.getElementById('modalDispatchBadge').textContent = "Update Dispatch";
-      document.getElementById('createModalHeading').textContent = "Edit Registration Opening";
-      document.getElementById('submitCreateBtn').textContent = "Save Changes";
-
-      const modal = document.getElementById('createModal');
-      if (modal) modal.classList.remove('hidden');
-    };
-
-    window.duplicateOpportunity = async function(id) {
-      const item = opportunities.find(o => o.id === id);
-      if (!item) return;
-
-      showCustomConfirm("Duplicate Opening", `Create a clone of "${item.titleEn}"?`, async () => {
-        const clonedItem = {
-          ...item,
-          id: `ugap-${Date.now()}`,
-          titleEn: `${item.titleEn} (Copy)`,
-          titleTa: item.titleTa ? `${item.titleTa} (நகல்)` : '',
-          deadline: new Date(Date.now() + 7 * 86400000).toISOString(),
-          isExtended: false,
-          status: 'open'
-        };
-
-        await saveOpportunityToCloud(clonedItem);
-        showToast("Opening cloned successfully. Ready to edit.");
-        window.triggerConfetti();
       });
-    };
-
-    function initTheme() {
-      const themeToggleBtn = document.getElementById('themeToggleBtn');
-      const themeIcon = document.getElementById('themeIcon');
-      const themeMeta = document.getElementById('themeColorMeta');
-
-      function updateThemeUI(isDark) {
-        if (isDark) {
-          document.documentElement.classList.add('dark');
-          if (themeIcon) themeIcon.setAttribute('data-lucide', 'sun');
-          if (themeMeta) themeMeta.setAttribute('content', '#080E1E');
-          try { localStorage.setItem('ugap_portal_theme', 'dark'); } catch(e){}
-        } else {
-          document.documentElement.classList.remove('dark');
-          if (themeIcon) themeIcon.setAttribute('data-lucide', 'moon');
-          if (themeMeta) themeMeta.setAttribute('content', '#0B132B');
-          try { localStorage.setItem('ugap_portal_theme', 'light'); } catch(e){}
-        }
-        window.safeCreateIcons();
-      }
-
-      const isCurrentDark = document.documentElement.classList.contains('dark');
-      updateThemeUI(isCurrentDark);
-
-      if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', () => {
-          const currentlyDark = document.documentElement.classList.contains('dark');
-          updateThemeUI(!currentlyDark);
-        });
-      }
     }
 
-    let deferredPrompt = null;
-    function initPWA() {
-      try {
-        if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-          const swScript = `
-            const CACHE_NAME = 'ugap-pwa-cache-v2';
-            self.addEventListener('install', (e) => { self.skipWaiting(); });
-            self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
-            self.addEventListener('fetch', (e) => {
-              e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
-            });
-          `;
-          const blob = new Blob([swScript], { type: 'application/javascript' });
-          const swUrl = URL.createObjectURL(blob);
-          navigator.serviceWorker.register(swUrl).catch(() => {});
-        }
-      } catch (e) {}
+    const adminDeactivateBar = document.getElementById('adminDeactivateBarBtn');
+    if (adminDeactivateBar) {
+      adminDeactivateBar.addEventListener('click', () => {
+        showCustomConfirm("Lock Admin Session", "Deactivate editorial controls?", () => {
+          setAdminState(false);
+          showToast("Admin session locked.");
+        });
+      });
+    }
 
-      window.addEventListener('beforeinstallprompt', (e) => {
+    const cancelPasscodeBtn = document.getElementById('cancelPasscodeBtn');
+    if (cancelPasscodeBtn) {
+      cancelPasscodeBtn.addEventListener('click', () => {
+        const modal = document.getElementById('passcodeModal');
+        if (modal) modal.classList.add('hidden');
+      });
+    }
+
+    const passcodeForm = document.getElementById('passcodeForm');
+    if (passcodeForm) {
+      passcodeForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        deferredPrompt = e;
-        const installBtn = document.getElementById('pwaInstallBtn');
-        if (installBtn) {
-          installBtn.classList.remove('hidden');
-          installBtn.classList.add('inline-flex');
+        const codeInput = document.getElementById('adminPasscodeInput');
+        const code = codeInput ? codeInput.value.trim() : '';
+        const modal = document.getElementById('passcodeModal');
+        const err = document.getElementById('passcodeError');
+
+        if (code === 'UGAP@reg/5006') {
+          if (modal) modal.classList.add('hidden');
+          setAdminState(true);
+          showToast("Admin authorized. Editorial tools enabled.");
+          window.triggerConfetti();
+        } else {
+          if (err) err.classList.remove('hidden');
         }
       });
-
-      const installBtn = document.getElementById('pwaInstallBtn');
-      if (installBtn) {
-        installBtn.addEventListener('click', async () => {
-          if (!deferredPrompt) return;
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          if (outcome === 'accepted') {
-            installBtn.classList.add('hidden');
-            installBtn.classList.remove('inline-flex');
-            showToast("UGAP Portal added to home screen!");
-            window.triggerConfetti();
-          }
-          deferredPrompt = null;
-        });
-      }
     }
 
-    window.promptExtendDeadline = function(id) {
-      const item = opportunities.find(o => o.id === id);
-      if (!item) return;
-      const idEl = document.getElementById('extendItemId');
-      const titleEl = document.getElementById('extendItemTitle');
-      const modal = document.getElementById('extendModal');
-
-      if (idEl) idEl.value = id;
-      if (titleEl) titleEl.textContent = item.titleEn;
-      if (modal) modal.classList.remove('hidden');
-    };
-
-    window.toggleItemStatus = async function(id) {
-      const item = opportunities.find(o => o.id === id);
-      if (!item) return;
-      item.status = item.status === 'open' ? 'closed' : 'open';
-      await saveOpportunityToCloud(item);
-      showToast(`Status toggled to: ${item.status.toUpperCase()}`);
-    };
-
-    window.promptDeleteItem = function(id) {
-      showCustomConfirm("Delete Opening", "Are you sure you want to permanently delete this registration opening?", async () => {
-        await deleteOpportunityFromCloud(id);
-        showToast("Registration opening removed.");
+    const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+    if (confirmCancelBtn) {
+      confirmCancelBtn.addEventListener('click', () => {
+        const modal = document.getElementById('confirmModal');
+        if (modal) modal.classList.add('hidden');
+        pendingConfirmAction = null;
       });
-    };
+    }
 
-    function bootApp() {
-      const yrEl = document.getElementById('currentYear');
-      if (yrEl) yrEl.textContent = new Date().getFullYear();
-
-      initTheme();
-      initPWA();
-      initDatabase();
-      window.safeCreateIcons();
-
-      // Start Countdown Spotlight loop (ticks every second)
-      setInterval(window.updateHeroCountdownSpotlight, 1000);
-
-      // Language Switchers
-      const langEnBtn = document.getElementById('langEnBtn');
-      const langTaBtn = document.getElementById('langTaBtn');
-
-      if (langEnBtn) langEnBtn.addEventListener('click', () => switchLanguage('en'));
-      if (langTaBtn) langTaBtn.addEventListener('click', () => switchLanguage('ta'));
-
-      function switchLanguage(lang) {
-        currentLang = lang;
-        const t = I18N[lang];
-        
-        if (langEnBtn) {
-          langEnBtn.className = lang === 'en' 
-            ? 'px-2 py-0.5 rounded-md bg-white text-slate-900 font-bold transition-all text-[11px]'
-            : 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition-all text-[11px]';
-        }
-        if (langTaBtn) {
-          langTaBtn.className = lang === 'ta'
-            ? 'px-2 py-0.5 rounded-md bg-white text-slate-900 font-bold transition-all text-[11px]'
-            : 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition-all text-[11px]';
-        }
-
-        const safeText = (id, text) => {
-          const el = document.getElementById(id);
-          if (el) el.textContent = text;
-        };
-
-        safeText('topBannerText', t.banner);
-        safeText('heroTag', t.heroTag);
-        safeText('heroHeading', t.heroHeading);
-        safeText('heroSubtitle', t.heroSubtitle);
-        safeText('trust1', t.trust1);
-        safeText('trust2', t.trust2);
-        safeText('trust3', t.trust3);
-
-        renderOpportunities();
-        window.updateHeroCountdownSpotlight();
-      }
-
-      // Filter Tabs
-      document.querySelectorAll('.filter-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          document.querySelectorAll('.filter-tab').forEach(t => {
-            t.className = 'filter-tab px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer';
-          });
-          tab.className = 'filter-tab active-tab px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-brand-navy text-amber-300 shadow-xs border border-brand-navy flex items-center gap-1.5 cursor-pointer';
-          currentFilter = tab.dataset.filter;
-          renderOpportunities();
-        });
+    const confirmProceedBtn = document.getElementById('confirmProceedBtn');
+    if (confirmProceedBtn) {
+      confirmProceedBtn.addEventListener('click', () => {
+        const modal = document.getElementById('confirmModal');
+        if (modal) modal.classList.add('hidden');
+        if (pendingConfirmAction) pendingConfirmAction();
+        pendingConfirmAction = null;
       });
+    }
 
-      const resetFilterBtn = document.getElementById('resetFilterBtn');
-      if (resetFilterBtn) {
-        resetFilterBtn.addEventListener('click', () => {
-          currentFilter = 'all';
-          const defaultTab = document.querySelector('[data-filter="all"]');
-          if (defaultTab) defaultTab.click();
-        });
-      }
+    const triggerUploadBtn = document.getElementById('triggerFileUploadBtn');
+    const flyerFileInput = document.getElementById('flyerFileInput');
+    if (triggerUploadBtn && flyerFileInput) {
+      triggerUploadBtn.addEventListener('click', () => flyerFileInput.click());
+    }
 
-      // Modal Triggers
-      const closeFormBtn = document.getElementById('closeFormModalBtn');
-      if (closeFormBtn) closeFormBtn.addEventListener('click', window.closeEmbeddedForm);
+    if (flyerFileInput) {
+      flyerFileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            setFlyerPreview(evt.target.result, file.name);
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
 
-      const closeFlyerBtn = document.getElementById('closeFlyerModalBtn');
-      if (closeFlyerBtn) closeFlyerBtn.addEventListener('click', window.closeFlyerLightbox);
-
-      // Admin Auth
-      const adminLoginBtn = document.getElementById('adminLoginBtn');
-      if (adminLoginBtn) adminLoginBtn.addEventListener('click', openPasscodeModal);
-
-      const adminDeactivateTop = document.getElementById('adminDeactivateTopBtn');
-      if (adminDeactivateTop) {
-        adminDeactivateTop.addEventListener('click', () => {
-          showCustomConfirm("Lock Admin Session", "Deactivate editorial controls?", () => {
-            setAdminState(false);
-            showToast("Admin session locked.");
-          });
-        });
-      }
-
-      const adminDeactivateBar = document.getElementById('adminDeactivateBarBtn');
-      if (adminDeactivateBar) {
-        adminDeactivateBar.addEventListener('click', () => {
-          showCustomConfirm("Lock Admin Session", "Deactivate editorial controls?", () => {
-            setAdminState(false);
-            showToast("Admin session locked.");
-          });
-        });
-      }
-
-      const cancelPasscodeBtn = document.getElementById('cancelPasscodeBtn');
-      if (cancelPasscodeBtn) {
-        cancelPasscodeBtn.addEventListener('click', () => {
-          const modal = document.getElementById('passcodeModal');
-          if (modal) modal.classList.add('hidden');
-        });
-      }
-
-      const passcodeForm = document.getElementById('passcodeForm');
-      if (passcodeForm) {
-        passcodeForm.addEventListener('submit', (e) => {
-          e.preventDefault();
-          const codeInput = document.getElementById('adminPasscodeInput');
-          const code = codeInput ? codeInput.value.trim() : '';
-          const modal = document.getElementById('passcodeModal');
-          const err = document.getElementById('passcodeError');
-
-          if (code === 'UGAP@reg/5006') {
-            if (modal) modal.classList.add('hidden');
-            setAdminState(true);
-            showToast("Admin authorized. Editorial tools enabled.");
-            window.triggerConfetti();
-          } else {
-            if (err) err.classList.remove('hidden');
-          }
-        });
-      }
-
-      // Confirmation Modal Listeners
-      const confirmCancelBtn = document.getElementById('confirmCancelBtn');
-      if (confirmCancelBtn) {
-        confirmCancelBtn.addEventListener('click', () => {
-          const modal = document.getElementById('confirmModal');
-          if (modal) modal.classList.add('hidden');
-          pendingConfirmAction = null;
-        });
-      }
-
-      const confirmProceedBtn = document.getElementById('confirmProceedBtn');
-      if (confirmProceedBtn) {
-        confirmProceedBtn.addEventListener('click', () => {
-          const modal = document.getElementById('confirmModal');
-          if (modal) modal.classList.add('hidden');
-          if (pendingConfirmAction) pendingConfirmAction();
-          pendingConfirmAction = null;
-        });
-      }
-
-      // Flyer File Upload Handling
-      const triggerUploadBtn = document.getElementById('triggerFileUploadBtn');
-      const flyerFileInput = document.getElementById('flyerFileInput');
-      if (triggerUploadBtn && flyerFileInput) {
-        triggerUploadBtn.addEventListener('click', () => flyerFileInput.click());
-      }
-
-      if (flyerFileInput) {
-        flyerFileInput.addEventListener('change', function(e) {
-          const file = e.target.files[0];
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-              setFlyerPreview(evt.target.result, file.name);
-            };
-            reader.readAsDataURL(file);
-          }
-        });
-      }
-
-      const inputFlyerUrl = document.getElementById('inputFlyerUrl');
-      if (inputFlyerUrl) {
-        inputFlyerUrl.addEventListener('input', function(e) {
-          const val = e.target.value.trim();
-          if (val) {
-            setFlyerPreview(val, "Web Poster URL");
-          } else {
-            resetFlyerAttachment();
-          }
-        });
-      }
-
-      const removeFlyerBtn = document.getElementById('removeFlyerBtn');
-      if (removeFlyerBtn) {
-        removeFlyerBtn.addEventListener('click', resetFlyerAttachment);
-      }
-
-      // Publishing Modal (New Opening trigger)
-      const quickCreateBtn = document.getElementById('quickCreateBtn');
-      if (quickCreateBtn) {
-        quickCreateBtn.addEventListener('click', () => {
+    const inputFlyerUrl = document.getElementById('inputFlyerUrl');
+    if (inputFlyerUrl) {
+      inputFlyerUrl.addEventListener('input', function(e) {
+        const val = e.target.value.trim();
+        if (val) {
+          setFlyerPreview(val, "Web Poster URL");
+        } else {
           resetFlyerAttachment();
-          const form = document.getElementById('createOpportunityForm');
-          if (form) form.reset();
-          
-          document.getElementById('editOpportunityId').value = '';
-          document.getElementById('modalDispatchBadge').textContent = "Portal Dispatch";
-          document.getElementById('createModalHeading').textContent = "Publish Registration Opening";
-          document.getElementById('submitCreateBtn').textContent = "Publish Live";
+        }
+      });
+    }
 
-          const modal = document.getElementById('createModal');
-          if (modal) modal.classList.remove('hidden');
-        });
-      }
+    const removeFlyerBtn = document.getElementById('removeFlyerBtn');
+    if (removeFlyerBtn) {
+      removeFlyerBtn.addEventListener('click', resetFlyerAttachment);
+    }
 
-      const closeCreateBtn = document.getElementById('closeCreateBtn');
-      if (closeCreateBtn) {
-        closeCreateBtn.addEventListener('click', () => {
-          const modal = document.getElementById('createModal');
-          if (modal) modal.classList.add('hidden');
-        });
-      }
+    const quickCreateBtn = document.getElementById('quickCreateBtn');
+    if (quickCreateBtn) {
+      quickCreateBtn.addEventListener('click', () => {
+        resetFlyerAttachment();
+        const form = document.getElementById('createOpportunityForm');
+        if (form) form.reset();
+        
+        document.getElementById('editOpportunityId').value = '';
+        document.getElementById('modalDispatchBadge').textContent = "Portal Dispatch";
+        document.getElementById('createModalHeading').textContent = "Publish Registration Opening";
+        document.getElementById('submitCreateBtn').textContent = "Publish Live";
 
-      const cancelCreateBtn = document.getElementById('cancelCreateBtn');
-      if (cancelCreateBtn) {
-        cancelCreateBtn.addEventListener('click', () => {
-          const modal = document.getElementById('createModal');
-          if (modal) modal.classList.add('hidden');
-        });
-      }
+        const modal = document.getElementById('createModal');
+        if (modal) modal.classList.remove('hidden');
+      });
+    }
 
-      // Create or Edit Opportunity Form Submit
-      const createOpportunityForm = document.getElementById('createOpportunityForm');
-      if (createOpportunityForm) {
-        createOpportunityForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const editId = document.getElementById('editOpportunityId')?.value.trim();
-          const titleEn = document.getElementById('inputTitleEn')?.value.trim() || '';
-          const titleTa = document.getElementById('inputTitleTa')?.value.trim() || '';
-          const category = document.getElementById('inputCategory')?.value.trim() || 'General';
-          const eligibility = document.getElementById('inputEligibility')?.value.trim() || 'Undergraduates';
-          const formUrl = document.getElementById('inputFormUrl')?.value.trim() || '';
-          const deadlineVal = document.getElementById('inputDeadline')?.value;
-          const descEn = document.getElementById('inputDescEn')?.value.trim() || '';
+    const closeCreateBtn = document.getElementById('closeCreateBtn');
+    if (closeCreateBtn) {
+      closeCreateBtn.addEventListener('click', () => {
+        const modal = document.getElementById('createModal');
+        if (modal) modal.classList.add('hidden');
+      });
+    }
 
-          if (editId) {
-            const existing = opportunities.find(o => o.id === editId);
-            if (existing) {
-              existing.titleEn = titleEn;
-              existing.titleTa = titleTa;
-              existing.category = category;
-              existing.eligibility = eligibility;
-              existing.formUrl = formUrl;
-              existing.flyerUrl = currentFlyerData;
-              if (deadlineVal) existing.deadline = new Date(deadlineVal).toISOString();
-              existing.descEn = descEn;
+    const cancelCreateBtn = document.getElementById('cancelCreateBtn');
+    if (cancelCreateBtn) {
+      cancelCreateBtn.addEventListener('click', () => {
+        const modal = document.getElementById('createModal');
+        if (modal) modal.classList.add('hidden');
+      });
+    }
 
-              await saveOpportunityToCloud(existing);
-              showToast("Opening changes saved successfully.");
-              window.triggerConfetti();
-            }
-          } else {
-            const newOpening = {
-              id: `ugap-${Date.now()}`,
-              titleEn,
-              titleTa,
-              category,
-              eligibility,
-              formUrl,
-              flyerUrl: currentFlyerData,
-              deadline: deadlineVal ? new Date(deadlineVal).toISOString() : new Date(Date.now() + 7 * 86400000).toISOString(),
-              isExtended: false,
-              status: 'open',
-              descEn
-            };
+    const createOpportunityForm = document.getElementById('createOpportunityForm');
+    if (createOpportunityForm) {
+      createOpportunityForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const editId = document.getElementById('editOpportunityId')?.value.trim();
+        const titleEn = document.getElementById('inputTitleEn')?.value.trim() || '';
+        const titleTa = document.getElementById('inputTitleTa')?.value.trim() || '';
+        const category = document.getElementById('inputCategory')?.value.trim() || 'General';
+        const eligibility = document.getElementById('inputEligibility')?.value.trim() || 'Undergraduates';
+        const formUrl = document.getElementById('inputFormUrl')?.value.trim() || '';
+        const deadlineVal = document.getElementById('inputDeadline')?.value;
+        const descEn = document.getElementById('inputDescEn')?.value.trim() || '';
 
-            await saveOpportunityToCloud(newOpening);
-            showToast("New registration opening published to cloud.");
+        if (editId) {
+          const existing = opportunities.find(o => o.id === editId);
+          if (existing) {
+            existing.titleEn = titleEn;
+            existing.titleTa = titleTa;
+            existing.category = category;
+            existing.eligibility = eligibility;
+            existing.formUrl = formUrl;
+            existing.flyerUrl = currentFlyerData;
+            if (deadlineVal) existing.deadline = new Date(deadlineVal).toISOString();
+            existing.descEn = descEn;
+
+            await saveOpportunityToCloud(existing);
+            showToast("Opening changes saved successfully.");
             window.triggerConfetti();
           }
+        } else {
+          const newOpening = {
+            id: `ugap-${Date.now()}`,
+            titleEn,
+            titleTa,
+            category,
+            eligibility,
+            formUrl,
+            flyerUrl: currentFlyerData,
+            deadline: deadlineVal ? new Date(deadlineVal).toISOString() : new Date(Date.now() + 7 * 86400000).toISOString(),
+            isExtended: false,
+            status: 'open',
+            descEn
+          };
 
-          const modal = document.getElementById('createModal');
-          if (modal) modal.classList.add('hidden');
-        });
-      }
+          await saveOpportunityToCloud(newOpening);
+          showToast("New registration opening published to cloud.");
+          window.triggerConfetti();
+        }
 
-      // Extend Deadline
-      const cancelExtendBtn = document.getElementById('cancelExtendBtn');
-      if (cancelExtendBtn) {
-        cancelExtendBtn.addEventListener('click', () => {
+        const modal = document.getElementById('createModal');
+        if (modal) modal.classList.add('hidden');
+      });
+    }
+
+    const cancelExtendBtn = document.getElementById('cancelExtendBtn');
+    if (cancelExtendBtn) {
+      cancelExtendBtn.addEventListener('click', () => {
+        const modal = document.getElementById('extendModal');
+        if (modal) modal.classList.add('hidden');
+      });
+    }
+
+    const extendForm = document.getElementById('extendForm');
+    if (extendForm) {
+      extendForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('extendItemId')?.value;
+        const newDt = document.getElementById('extendNewDeadline')?.value;
+        const item = opportunities.find(o => o.id === id);
+        if (item && newDt) {
+          item.deadline = new Date(newDt).toISOString();
+          item.isExtended = true;
+          item.status = 'open';
+          await saveOpportunityToCloud(item);
           const modal = document.getElementById('extendModal');
           if (modal) modal.classList.add('hidden');
-        });
-      }
+          showToast("Deadline successfully extended.");
+          window.triggerConfetti();
+        }
+      });
+    }
 
-      const extendForm = document.getElementById('extendForm');
-      if (extendForm) {
-        extendForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const id = document.getElementById('extendItemId')?.value;
-          const newDt = document.getElementById('extendNewDeadline')?.value;
-          const item = opportunities.find(o => o.id === id);
-          if (item && newDt) {
-            item.deadline = new Date(newDt).toISOString();
-            item.isExtended = true;
-            item.status = 'open';
-            await saveOpportunityToCloud(item);
-            const modal = document.getElementById('extendModal');
+    const exportDataBtn = document.getElementById('exportDataBtn');
+    if (exportDataBtn) {
+      exportDataBtn.addEventListener('click', () => {
+        const ta = document.getElementById('backupTextarea');
+        if (ta) ta.value = JSON.stringify(opportunities, null, 2);
+        const modal = document.getElementById('backupModal');
+        if (modal) modal.classList.remove('hidden');
+      });
+    }
+
+    const closeBackupBtn = document.getElementById('closeBackupBtn');
+    if (closeBackupBtn) {
+      closeBackupBtn.addEventListener('click', () => {
+        const modal = document.getElementById('backupModal');
+        if (modal) modal.classList.add('hidden');
+      });
+    }
+
+    const copyJsonBtn = document.getElementById('copyJsonBtn');
+    if (copyJsonBtn) {
+      copyJsonBtn.addEventListener('click', () => {
+        const textarea = document.getElementById('backupTextarea');
+        if (textarea) {
+          textarea.select();
+          document.execCommand('copy');
+          showToast("JSON copied to clipboard.");
+        }
+      });
+    }
+
+    const importJsonBtn = document.getElementById('importJsonBtn');
+    if (importJsonBtn) {
+      importJsonBtn.addEventListener('click', async () => {
+        try {
+          const textarea = document.getElementById('backupTextarea');
+          const parsed = JSON.parse(textarea?.value || '');
+          if (Array.isArray(parsed)) {
+            for (const item of parsed) {
+              await saveOpportunityToCloud(item);
+            }
+            const modal = document.getElementById('backupModal');
             if (modal) modal.classList.add('hidden');
-            showToast("Deadline successfully extended.");
+            showToast("Cloud portal data restored successfully.");
             window.triggerConfetti();
           }
-        });
-      }
-
-      // JSON Backup
-      const exportDataBtn = document.getElementById('exportDataBtn');
-      if (exportDataBtn) {
-        exportDataBtn.addEventListener('click', () => {
-          const ta = document.getElementById('backupTextarea');
-          if (ta) ta.value = JSON.stringify(opportunities, null, 2);
-          const modal = document.getElementById('backupModal');
-          if (modal) modal.classList.remove('hidden');
-        });
-      }
-
-      const closeBackupBtn = document.getElementById('closeBackupBtn');
-      if (closeBackupBtn) {
-        closeBackupBtn.addEventListener('click', () => {
-          const modal = document.getElementById('backupModal');
-          if (modal) modal.classList.add('hidden');
-        });
-      }
-
-      const copyJsonBtn = document.getElementById('copyJsonBtn');
-      if (copyJsonBtn) {
-        copyJsonBtn.addEventListener('click', () => {
-          const textarea = document.getElementById('backupTextarea');
-          if (textarea) {
-            textarea.select();
-            document.execCommand('copy');
-            showToast("JSON copied to clipboard.");
-          }
-        });
-      }
-
-      const importJsonBtn = document.getElementById('importJsonBtn');
-      if (importJsonBtn) {
-        importJsonBtn.addEventListener('click', async () => {
-          try {
-            const textarea = document.getElementById('backupTextarea');
-            const parsed = JSON.parse(textarea?.value || '');
-            if (Array.isArray(parsed)) {
-              for (const item of parsed) {
-                await saveOpportunityToCloud(item);
-              }
-              const modal = document.getElementById('backupModal');
-              if (modal) modal.classList.add('hidden');
-              showToast("Cloud portal data restored successfully.");
-              window.triggerConfetti();
-            }
-          } catch (err) {
-            showToast("Invalid JSON format.");
-          }
-        });
-      }
+        } catch (err) {
+          showToast("Invalid JSON format.");
+        }
+      });
     }
+  }
 
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', bootApp);
-    } else {
-      bootApp();
-    }
-  </script>
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootApp);
+  } else {
+    bootApp();
+  }
+</script>
 </body>
 </html>
