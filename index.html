@@ -2,19 +2,28 @@
 <html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>UGAP Registration Portal</title>
-
   
+  <!-- PWA & Mobile Web App Meta Tags -->
+  <meta name="theme-color" content="#0B132B" id="themeColorMeta">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="UGAP Portal">
+
+  <!-- Embedded Web App Manifest for PWA installation -->
+  <link rel="manifest" href='data:application/manifest+json,{"name":"UGAP Registration Portal","short_name":"UGAP Portal","description":"Official central intake and opportunities hub for Undergraduates Association - Puttalam","start_url":".","display":"standalone","background_color":"%230B132B","theme_color":"%230B132B","icons":[{"src":"logo.png","sizes":"192x192","type":"image/png"},{"src":"logo.png","sizes":"512x512","type":"image/png"}]}'>
+
   <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;600;700&display=swap" rel="stylesheet">
   
   <!-- Favicon (Uses your logo) -->
-<link rel="icon" type="image/png" href="logo.png" />
+  <link rel="icon" type="image/png" href="logo.png" />
 
-<!-- WhatsApp & Social Link Preview -->
+  <!-- WhatsApp & Social Link Preview -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="hifazmh.github.io/ugapreg" />
   <meta property="og:title" content="Undergraduates' Association Puttalam — Registration Portal" />
@@ -23,13 +32,16 @@
   <meta property="og:image:secure_url" content="hifazmh.github.io/ugapreg/logo.png" />
   <meta property="og:image:type" content="image/png" />
 
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS CDN with dark mode enabled via class -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons UMD Bundle -->
   <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+  <!-- Canvas Confetti CDN for Milestone Celebrations -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -39,13 +51,33 @@
               gold: '#D97706',
               goldHover: '#B45309',
               amberLight: '#FEF3C7',
-              surface: '#F8FAFC'
+              surface: '#F8FAFC',
+              darkSurface: '#080E1E'
             }
           },
           fontFamily: {
             sans: ['"Plus Jakarta Sans"', 'sans-serif'],
             display: ['"Outfit"', 'sans-serif'],
             tamil: ['"Noto Sans Tamil"', '"Plus Jakarta Sans"', 'sans-serif']
+          },
+          animation: {
+            'marquee': 'marquee 32s linear infinite',
+            'pulse-subtle': 'pulseSubtle 3s ease-in-out infinite',
+            'float-gentle': 'floatGentle 6s ease-in-out infinite'
+          },
+          keyframes: {
+            marquee: {
+              '0%': { transform: 'translateX(0%)' },
+              '100%': { transform: 'translateX(-50%)' }
+            },
+            pulseSubtle: {
+              '0%, 100%': { opacity: 1 },
+              '50%': { opacity: 0.85 }
+            },
+            floatGentle: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-6px)' }
+            }
           }
         }
       }
@@ -53,7 +85,6 @@
   </script>
 
   <style>
-    /* Hide scrollbars while maintaining smooth touch navigation */
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -61,123 +92,171 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
-    
-    /* Touch optimization */
     button, a, input, select, textarea {
       touch-action: manipulation;
     }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+    .dark .glass-card {
+      background: rgba(11, 19, 43, 0.88);
+    }
+    .theme-transition {
+      transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+    }
+    /* Stop iOS Safari from auto-zooming on focus while keeping desktop crisp */
+    @media (max-width: 640px) {
+      input, select, textarea {
+        font-size: 16px !important;
+      }
+    }
   </style>
+
+  <!-- Instant Theme Initializer to prevent white flash in dark mode -->
+  <script>
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('ugap_portal_theme');
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 
-<body class="bg-brand-surface text-slate-800 antialiased font-sans flex flex-col min-h-screen selection:bg-amber-100 selection:text-amber-900">
+<body class="bg-brand-surface dark:bg-brand-darkSurface text-slate-800 dark:text-slate-100 antialiased font-sans flex flex-col min-h-screen selection:bg-amber-100 selection:text-amber-900 theme-transition overflow-x-hidden">
 
-  <!-- Top Announcement & Admin Gate Ribbon -->
+  <!-- Top Announcement, Social Media & Admin Gate Ribbon -->
   <aside aria-label="Announcement bar" class="bg-brand-navy text-slate-200 border-b border-amber-500/20 text-xs py-2 px-3 sm:px-6 sticky top-0 z-40 shadow-xs">
-    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
       
       <!-- Left: Status Indicator & Title -->
-      <div class="flex items-center gap-2 text-center sm:text-left min-w-0">
+      <div class="flex items-center gap-2 text-center sm:text-left min-w-0 w-full sm:w-auto justify-center sm:justify-start">
         <span class="flex h-2 w-2 relative shrink-0">
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
           <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
         </span>
         <span id="topBannerText" class="font-semibold tracking-wide text-amber-300 text-[11px] sm:text-xs truncate">
-          Undergraduates' Association - Puttalam (UGAP) • Central Registration Portal
+          Official UGAP Registration Portal
         </span>
       </div>
 
-      <!-- Right: Social Links, Language Selector & Admin Access -->
-      <div class="flex items-center gap-2 sm:gap-3 flex-wrap justify-center shrink-0 text-[11px]">
+      <!-- Right: Social Channels, PWA Install, Theme Toggle, Language Switcher, Cloud Indicator & Admin Access -->
+      <div class="flex items-center gap-1.5 sm:gap-2.5 flex-wrap justify-center shrink-0 text-[11px] w-full sm:w-auto">
         
-        <div class="flex items-center space-x-1 border-r border-slate-700/80 pr-2.5">
-          <a href="https://www.facebook.com/ugapx" target="_blank" rel="noopener noreferrer" class="p-1 text-slate-300 hover:text-amber-400 transition-colors" title="Facebook (@ugapx)">
+        <!-- Official Social Links -->
+        <div class="flex items-center space-x-0.5 border-r border-slate-700/80 pr-1.5 sm:pr-2">
+          <a href="https://www.facebook.com/ugapx" target="_blank" rel="noopener noreferrer" class="p-1 text-slate-300 hover:text-amber-400 transition-colors" title="Facebook (@ugapx)" aria-label="Facebook">
             <i data-lucide="facebook" class="w-3.5 h-3.5"></i>
           </a>
-          <a href="https://www.instagram.com/ugaputtalam" target="_blank" rel="noopener noreferrer" class="p-1 text-slate-300 hover:text-amber-400 transition-colors" title="Instagram (@ugaputtalam)">
+          <a href="https://www.instagram.com/ugaputtalam" target="_blank" rel="noopener noreferrer" class="p-1 text-slate-300 hover:text-amber-400 transition-colors" title="Instagram (@ugaputtalam)" aria-label="Instagram">
             <i data-lucide="instagram" class="w-3.5 h-3.5"></i>
           </a>
-          <a href="https://www.linkedin.com/company/undergraduates-association-puttalam-ugap/" target="_blank" rel="noopener noreferrer" class="p-1 text-slate-300 hover:text-amber-400 transition-colors" title="LinkedIn">
+          <a href="https://www.linkedin.com/company/undergraduates-association-puttalam-ugap/" target="_blank" rel="noopener noreferrer" class="p-1 text-slate-300 hover:text-amber-400 transition-colors" title="LinkedIn" aria-label="LinkedIn">
             <i data-lucide="linkedin" class="w-3.5 h-3.5"></i>
           </a>
-          <a href="https://www.youtube.com/@UGA-Puttalam" target="_blank" rel="noopener noreferrer" class="p-1 text-slate-300 hover:text-amber-400 transition-colors" title="YouTube (@UGA-Puttalam)">
+          <a href="https://www.youtube.com/@UGA-Puttalam" target="_blank" rel="noopener noreferrer" class="p-1 text-slate-300 hover:text-amber-400 transition-colors" title="YouTube (@UGA-Puttalam)" aria-label="YouTube">
             <i data-lucide="youtube" class="w-3.5 h-3.5"></i>
           </a>
         </div>
 
-        <!-- Language Switcher -->
-        <div class="inline-flex rounded-lg bg-slate-900/80 p-0.5 border border-slate-700">
-          <button id="langEnBtn" class="px-2.5 py-0.5 rounded-md bg-white text-slate-900 font-bold transition-all text-[11px]">EN</button>
-          <button id="langTaBtn" class="px-2.5 py-0.5 rounded-md text-slate-400 hover:text-white transition-all text-[11px]">தமிழ்</button>
+        <!-- PWA Install Button -->
+        <button id="pwaInstallBtn" class="hidden items-center gap-1 px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-all text-[10px] sm:text-[11px] shadow-xs cursor-pointer">
+          <i data-lucide="download-cloud" class="w-3 h-3"></i>
+          <span>Install App</span>
+        </button>
+
+        <!-- Dark / Light Theme Toggle -->
+        <button id="themeToggleBtn" class="p-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-amber-300 border border-slate-700 transition-colors cursor-pointer" title="Toggle Dark / Light Theme" aria-label="Toggle Theme">
+          <i id="themeIcon" data-lucide="moon" class="w-3.5 h-3.5"></i>
+        </button>
+
+        <!-- Cloud Sync Pill (Desktop only for compactness) -->
+        <div id="cloudStatusPill" class="hidden md:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-900/90 border border-slate-700 text-[10px]">
+          <span id="cloudDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="cloudStatusText" class="font-medium text-emerald-300">Live Sync</span>
         </div>
 
-        <button id="adminLoginBtn" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition-all text-[11px] shadow-xs">
+        <!-- Language Switcher -->
+        <div class="inline-flex rounded-lg bg-slate-900/80 p-0.5 border border-slate-700">
+          <button id="langEnBtn" class="px-2 py-0.5 rounded-md bg-white text-slate-900 font-bold transition-all text-[11px]">EN</button>
+          <button id="langTaBtn" class="px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition-all text-[11px]">TA</button>
+        </div>
+
+        <!-- Admin Gate Button -->
+        <button id="adminLoginBtn" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition-all text-[11px] shadow-xs cursor-pointer">
           <i data-lucide="lock" class="w-3 h-3 text-slate-950"></i>
           <span id="adminStatusText">Admin Gate</span>
         </button>
 
-        <button id="adminDeactivateTopBtn" class="hidden items-center gap-1 px-2.5 py-1 rounded-lg bg-red-900/50 hover:bg-red-800 text-red-200 border border-red-700/60 font-medium transition-all text-[11px]">
+        <!-- Exit Admin Session Button -->
+        <button id="adminDeactivateTopBtn" class="hidden items-center gap-1 px-2 py-1 rounded-lg bg-red-900/50 hover:bg-red-800 text-red-200 border border-red-700/60 font-medium transition-all text-[11px] cursor-pointer">
           <i data-lucide="log-out" class="w-3 h-3"></i>
-          <span>Exit Admin</span>
+          <span>Exit</span>
         </button>
       </div>
 
     </div>
   </aside>
 
-  <header class="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-[37px] sm:top-[33px] z-30">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 sm:h-20 flex items-center justify-between">
+  <header class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-[75px] sm:top-[33px] z-30 theme-transition">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between">
       
-      <!-- Brand & Identity -->
-      <a href="#" class="flex items-center gap-3 group min-w-0">
-        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-slate-50 border border-amber-300/80 p-1 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
-          <img src="logo.png" alt="UGAP Crest" class="w-full h-full object-contain" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'font-display font-extrabold text-brand-navy text-xs tracking-tighter\'>UGAP</span>';">
+      <!-- Brand Crest & Details -->
+      <a href="#" class="flex items-center gap-2.5 sm:gap-3 group min-w-0">
+        <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-slate-50 dark:bg-slate-800 border border-amber-300/80 dark:border-amber-500/40 p-1 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
+          <img src="logo.png" alt="UGAP Crest" class="w-full h-full object-contain" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'font-display font-extrabold text-brand-navy dark:text-amber-300 text-xs tracking-tighter\'>UGAP</span>';">
         </div>
         <div class="truncate">
-          <div class="flex items-center gap-2">
-            <span class="font-display font-extrabold text-base sm:text-lg tracking-tight text-slate-900">UGAP</span>
-            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider uppercase bg-amber-50 text-amber-800 border border-amber-200">
-              Official Registration Portal
-            </span>
-          </div>
-          <p class="text-[11px] text-slate-500 font-medium truncate">
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <span class="font-display font-black text-base sm:text-lg tracking-tight text-slate-900 dark:text-white">UGAP</span>
             
+          </div>
+          <p class="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
+          
           </p>
         </div>
       </a>
 
-      <!-- Quick Search Bar -->
-      <div class="relative w-44 sm:w-64 md:w-80">
-        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none"></i>
-        <input 
-          type="text" 
-          id="searchInput" 
-          placeholder="Search registrations or wings..." 
-          class="w-full pl-9 pr-3 py-1.5 sm:py-2 rounded-xl border border-slate-200 text-xs bg-slate-50 focus:bg-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-hidden transition-all placeholder:text-slate-400"
-        />
+      <!-- Header Right Badges -->
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="hidden md:inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
+          <span>Safe & Secured by UGAP</span>
+        </div>
+        <button onclick="triggerConfetti()" class="p-2 sm:p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 transition-colors cursor-pointer" title="Celebrate UGAP">
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-600 dark:text-amber-400 animate-spin" style="animation-duration: 8s;"></i>
+        </button>
       </div>
 
     </div>
   </header>
 
-  <nav aria-label="Editorial toolbar" id="adminControlsBar" class="hidden bg-amber-50/90 border-b border-amber-200 px-4 py-2.5 text-xs text-amber-950 sticky top-[73px] sm:top-[81px] z-20">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+  <nav aria-label="Editorial toolbar" id="adminControlsBar" class="hidden bg-amber-50/95 dark:bg-amber-950/80 border-b border-amber-200 dark:border-amber-800/80 px-4 py-2 text-xs text-amber-950 dark:text-amber-200 sticky top-[111px] sm:top-[73px] z-20 shadow-xs theme-transition">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 sm:gap-3">
       <div class="flex items-center gap-2">
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-600 text-white font-bold text-[10px] uppercase tracking-wider">
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-600 text-white font-bold text-[10px] uppercase tracking-wider">
           <i data-lucide="shield-check" class="w-3 h-3"></i> Admin Session
         </span>
-        <span class="font-medium text-amber-900 hidden sm:inline">You have full publishing & deadline control.</span>
+        <span class="font-medium text-amber-900 dark:text-amber-300 hidden md:inline">Edit, duplicate openings, upload flyers & extend deadlines.</span>
       </div>
 
-      <div class="flex items-center gap-2 flex-wrap">
-        <button id="quickCreateBtn" class="px-3 py-1.5 rounded-lg bg-brand-navy hover:bg-slate-800 text-amber-300 font-bold transition-all flex items-center gap-1.5 shadow-xs">
+      <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+        <button id="quickCreateBtn" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-brand-navy hover:bg-slate-800 text-amber-300 font-bold transition-all flex items-center gap-1 shadow-xs cursor-pointer text-xs">
           <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
           <span>New Opening</span>
         </button>
-        <button id="exportDataBtn" class="px-2.5 py-1.5 rounded-lg bg-white border border-amber-300 hover:bg-amber-100/50 text-amber-900 font-semibold transition-all flex items-center gap-1">
-          <i data-lucide="database" class="w-3.5 h-3.5 text-amber-700"></i>
+        <button id="exportDataBtn" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 hover:bg-amber-100/50 dark:hover:bg-slate-700 text-amber-900 dark:text-amber-300 font-semibold transition-all flex items-center gap-1 cursor-pointer text-xs">
+          <i data-lucide="database" class="w-3.5 h-3.5 text-amber-700 dark:text-amber-400"></i>
           <span>Backup JSON</span>
         </button>
-        <button id="adminDeactivateBarBtn" class="px-2.5 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-800 font-semibold border border-red-300 transition-all flex items-center gap-1">
+        <button id="adminDeactivateBarBtn" class="px-2.5 py-1.5 rounded-lg bg-red-100 dark:bg-red-950/60 hover:bg-red-200 dark:hover:bg-red-900 text-red-800 dark:text-red-300 font-semibold border border-red-300 dark:border-red-800 transition-all flex items-center gap-1 cursor-pointer text-xs">
           <i data-lucide="lock" class="w-3.5 h-3.5"></i>
           <span>Lock Session</span>
         </button>
@@ -186,84 +265,153 @@
   </nav>
 
   <main class="flex-grow">
-    <section class="relative pt-10 pb-12 sm:pt-14 sm:pb-16 bg-white border-b border-slate-200/80 overflow-hidden">
-      <!-- Decorative background accent -->
-      <div class="absolute -top-24 right-1/4 w-96 h-96 bg-amber-100/40 rounded-full blur-3xl pointer-events-none"></div>
+    <section class="relative pt-6 pb-8 sm:pt-12 sm:pb-14 bg-gradient-to-b from-white via-amber-50/25 to-brand-surface dark:from-slate-900 dark:via-slate-900/90 dark:to-brand-darkSurface border-b border-slate-200/80 dark:border-slate-800 overflow-hidden theme-transition">
+      <!-- Ambient Glow Orbs -->
+      <div class="absolute -top-24 right-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-amber-200/30 dark:bg-amber-600/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute top-1/2 -left-20 w-60 sm:w-72 h-60 sm:h-72 bg-blue-100/40 dark:bg-blue-600/10 rounded-full blur-2xl pointer-events-none"></div>
 
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <div class="max-w-3xl">
+        <div class="grid lg:grid-cols-12 gap-6 sm:gap-8 items-center">
           
-          <!-- Category Chip -->
-          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold mb-4">
-            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-600"></i>
-            <span id="heroTag">Safe & Secure Portal</span>
+          <!-- Hero Left Column -->
+          <div class="lg:col-span-7">
+            <!-- Category Tag -->
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-300 text-[11px] sm:text-xs font-bold mb-3 sm:mb-4 shadow-2xs">
+              <i data-lucide="Handshake" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400"></i>
+              <span id="heroTag">Connect, Participate & Lead</span>
+            </div>
+
+            <!-- Main Heading -->
+            <h1 id="heroHeading" class="font-display text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.18] mb-2.5 sm:mb-3">
+              Central Registration & Applications Portal
+            </h1>
+
+            <!-- Subtitle -->
+            <p id="heroSubtitle" class="text-xs sm:text-sm md:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mb-4 sm:mb-6 font-normal">
+              The centralized gateway for enrollment across all official UGAP initiatives.
+            </p>
+
+            <!-- Trust Chips -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-semibold text-slate-600 dark:text-slate-400 pt-3 border-t border-slate-200/80 dark:border-slate-800">
+              <span class="inline-flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs text-[11px] sm:text-xs">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400"></i>
+                <span id="trust1">Secure Submission</span>
+              </span>
+              <span class="inline-flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs text-[11px] sm:text-xs">
+                <i data-lucide="file-check" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400"></i>
+                <span id="trust2">Paperless Forms</span>
+              </span>
+              <span class="inline-flex items-center gap-1.5 bg-white dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs text-[11px] sm:text-xs">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"></i>
+                <span id="trust3">Real-Time Deadlines</span>
+              </span>
+            </div>
           </div>
 
-          <!-- Main Title -->
-          <h1 id="heroHeading" class="font-display text-2xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.2] mb-3">
-            Central Registration & Applications Portal
-          </h1>
+          <!-- Hero Right Column: Live Ticking Countdown Spotlight Widget -->
+          <div class="lg:col-span-5 mt-2 sm:mt-0">
+            <div id="heroCountdownCard" class="relative group animate-float-gentle">
+              <!-- Golden ambient gradient ring -->
+              <div class="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-300 to-brand-navy opacity-75 blur-md group-hover:opacity-100 transition-opacity duration-300"></div>
 
-          <!-- Subtitle -->
-          <p id="heroSubtitle" class="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mb-6">
-            Discover and apply for official UGAP programs, volunteer calls, and academic initiatives across Puttalam Zone.
-          </p>
+              <div class="relative glass-card rounded-2xl p-4 sm:p-6 border border-amber-300/80 dark:border-amber-500/40 shadow-xl flex flex-col justify-between">
+                
+                <!-- Spotlight Header -->
+                <div class="flex items-center justify-between mb-3 border-b border-amber-100 dark:border-amber-900/60 pb-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="flex h-2 w-2 relative">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                    </span>
+                    <span class="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/60 px-2 py-0.5 rounded border border-red-200 dark:border-red-800">
+                      Deadline Spotlight
+                    </span>
+                  </div>
+                  <span class="text-[9px] sm:text-[10px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded">
+                    Live Clock
+                  </span>
+                </div>
 
-          <!-- Trust Badges -->
-          <div class="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-600 pt-2 border-t border-slate-100">
-            <span class="inline-flex items-center gap-1.5">
-              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>
-              <span id="trust1">Governed by UGAP ExCo</span>
-            </span>
-            <span class="inline-flex items-center gap-1.5">
-              <i data-lucide="file-check" class="w-4 h-4 text-amber-600"></i>
-              <span id="trust2">Data Confidential</span>
-            </span>
-            <span class="inline-flex items-center gap-1.5">
-              <i data-lucide="calendar" class="w-4 h-4 text-blue-600"></i>
-              <span id="trust3">Live Deadline Tracking</span>
-            </span>
+                <!-- Spotlight Target Title -->
+                <h2 id="countdownTargetTitle" class="font-display font-bold text-sm sm:text-base text-slate-900 dark:text-white line-clamp-2 mb-3">
+                  Annual Grand Felicitation Ceremony 2026
+                </h2>
+
+                <!-- Countdown Digits Grid -->
+                <div class="grid grid-cols-4 gap-1.5 sm:gap-2 text-center mb-3 sm:mb-4">
+                  <div class="bg-brand-navy text-white rounded-xl p-2 sm:p-2.5 shadow-xs">
+                    <div id="cdDays" class="font-display font-black text-base sm:text-2xl text-amber-300">00</div>
+                    <div class="text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-slate-400">Days</div>
+                  </div>
+                  <div class="bg-brand-navy text-white rounded-xl p-2 sm:p-2.5 shadow-xs">
+                    <div id="cdHours" class="font-display font-black text-base sm:text-2xl text-amber-300">00</div>
+                    <div class="text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-slate-400">Hours</div>
+                  </div>
+                  <div class="bg-brand-navy text-white rounded-xl p-2 sm:p-2.5 shadow-xs">
+                    <div id="cdMins" class="font-display font-black text-base sm:text-2xl text-amber-300">00</div>
+                    <div class="text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-slate-400">Mins</div>
+                  </div>
+                  <div class="bg-brand-navy text-white rounded-xl p-2 sm:p-2.5 shadow-xs">
+                    <div id="cdSecs" class="font-display font-black text-base sm:text-2xl text-amber-300">00</div>
+                    <div class="text-[8px] sm:text-[9px] uppercase tracking-wider font-semibold text-slate-400">Secs</div>
+                  </div>
+                </div>
+
+                <!-- Spotlight Action Button -->
+                <button id="countdownActionBtn" class="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer">
+                  <i data-lucide="zap" class="w-4 h-4 text-slate-950"></i>
+                  <span>Register for This Opening</span>
+                </button>
+
+              </div>
+            </div>
           </div>
 
         </div>
       </div>
     </section>
 
-    <section class="py-8 sm:py-12 bg-brand-surface">
+    
+
+    <section class="py-6 sm:py-12 bg-brand-surface dark:bg-brand-darkSurface theme-transition">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <!-- Filter Tabs -->
-        <div class="flex items-center justify-between gap-4 mb-8 overflow-hidden">
-          <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-            <button data-filter="all" class="filter-tab active-tab px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-brand-navy text-amber-300 shadow-xs border border-brand-navy">
-              All Openings
+        <!-- Filter Tabs Bar with Dynamic Live Counts and Fluid Horizontal Scrolling on Mobile -->
+        <div class="mb-6 sm:mb-8 overflow-hidden">
+          <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+            <button data-filter="all" class="filter-tab active-tab px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-brand-navy text-amber-300 shadow-xs border border-brand-navy flex items-center gap-1.5 cursor-pointer">
+              <span>All Openings</span>
+              <span id="countAll" class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-400/20 text-amber-300">0</span>
             </button>
-            <button data-filter="open" class="filter-tab px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-white text-slate-600 hover:text-slate-900 border border-slate-200">
-              Active Registrations
+            <button data-filter="open" class="filter-tab px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer">
+              <span>Active Registrations</span>
+              <span id="countOpen" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">0</span>
             </button>
-            <button data-filter="closing-soon" class="filter-tab px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-white text-slate-600 hover:text-slate-900 border border-slate-200">
-              Closing Soon
+            <button data-filter="closing-soon" class="filter-tab px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer">
+              <span>Closing Soon</span>
+              <span id="countClosingSoon" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">0</span>
             </button>
-            <button data-filter="closed" class="filter-tab px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-white text-slate-600 hover:text-slate-900 border border-slate-200">
-              Archived / Closed
+            <button data-filter="closed" class="filter-tab px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer">
+              <span>Archived / Closed</span>
+              <span id="countClosed" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">0</span>
             </button>
           </div>
         </div>
 
         <!-- Opportunities Grid Container -->
-        <div id="opportunitiesContainer" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <!-- Dynamically populated via renderOpportunities() -->
+        <div id="opportunitiesContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <!-- Populated dynamically via renderOpportunities() -->
         </div>
 
         <!-- Empty State -->
-        <div id="emptyState" class="hidden text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300 max-w-lg mx-auto">
-          <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center mx-auto mb-3">
+        <div id="emptyState" class="hidden text-center py-12 sm:py-16 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 max-w-lg mx-auto p-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center mx-auto mb-3">
             <i data-lucide="inbox" class="w-6 h-6"></i>
           </div>
-          <h3 class="font-display font-bold text-slate-900 text-sm mb-1">No matching registrations found</h3>
-          <p class="text-xs text-slate-500 max-w-xs mx-auto mb-4">Try adjusting your search query or reset active filters.</p>
-          <button id="resetFilterBtn" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all">
-            Clear Filters
+          <h3 class="font-display font-bold text-slate-900 dark:text-white text-sm mb-1">No matching registrations found</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto mb-4">No active opportunities in this category at the moment.</p>
+          <button id="resetFilterBtn" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer">
+            View All Openings
           </button>
         </div>
 
@@ -271,54 +419,61 @@
     </section>
   </main>
 
-  <footer class="bg-brand-navy text-slate-400 text-xs py-8 border-t border-slate-800">
+  <footer class="bg-brand-navy text-slate-400 text-xs py-8 border-t border-slate-800 mt-auto">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
       <div class="flex items-center gap-2">
-        <span class="font-display font-extrabold text-white text-sm">UGAP</span>
+        <span class="font-display font-black text-white text-sm">UGAP</span>
         <span class="text-slate-600">•</span>
-        <span>Official Event Registration Portal</span>
+          <div class="text-[11px] text-slate-400">
+        &copy; <span id="currentYear">2026</span> Undergraduates' Association Puttalam
       </div>
-      <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 text-[11px] text-slate-400">
-        <span>&copy; <span id="currentYear">2026</span> Undergraduates' Association Puttalam.</span>
-        <span class="hidden sm:inline text-slate-600">•</span>
-        <a href="https://hifazmh.site" target="_blank" rel="noopener noreferrer" class="text-slate-300 hover:text-amber-400 transition-colors inline-flex items-center gap-1 font-medium" title="Developer Portfolio">
+      </div>
+
+      
+
+      
+
+      <!-- Developer Credit to hifazmh.site -->
+      <div class="flex items-center gap-3">
+        <a href="https://hifazmh.site" target="_blank" rel="noopener noreferrer" class="font-bold text-amber-300 hover:text-amber-200 transition-colors inline-flex items-center gap-1.5 bg-slate-900/80 px-3 py-1 rounded-lg border border-amber-500/30 hover:border-amber-400 text-[11px] shadow-xs cursor-pointer">
           <span>Meet the Dev – <strong class="text-amber-300 hover:underline">Hifaz MH (ExCo 25/26)</strong></span>
-          <i data-lucide="external-link" class="w-3 h-3 text-amber-500"></i>
+          <i data-lucide="external-link" class="w-3 h-3"></i>
         </a>
       </div>
+
     </div>
   </footer>
 
-  <div id="formEmbedModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-xs p-2 sm:p-4 md:p-6" role="dialog" aria-modal="true">
-    <div class="bg-white w-full h-[95vh] max-w-5xl rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+  <div id="formEmbedModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-1 sm:p-4 md:p-6" role="dialog" aria-modal="true">
+    <div class="bg-white dark:bg-slate-900 w-full h-[98vh] sm:h-[95vh] max-w-5xl rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
       
       <!-- Modal Header -->
-      <div class="px-4 py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
-        <div class="min-w-0 pr-4">
-          <h3 id="formModalTitle" class="font-display font-bold text-sm sm:text-base text-amber-300 truncate">
+      <div class="px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
+        <div class="min-w-0 pr-2 sm:pr-4">
+          <h3 id="formModalTitle" class="font-display font-bold text-xs sm:text-base text-amber-300 truncate">
             Registration Form
           </h3>
-          <p id="formModalDeadline" class="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5 truncate">
+          <p id="formModalDeadline" class="text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1 mt-0.5 truncate">
             <!-- Populated via script -->
           </p>
         </div>
 
-        <div class="flex items-center gap-2 shrink-0">
-          <a id="formExternalLink" href="#" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 border border-slate-700 transition-colors">
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <a id="formExternalLink" href="#" target="_blank" rel="noopener noreferrer" class="px-2 sm:px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] sm:text-xs font-semibold flex items-center gap-1 border border-slate-700 transition-colors">
             <span class="hidden sm:inline">Open in New Tab</span>
             <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
           </a>
-          <button id="closeFormModalBtn" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+          <button id="closeFormModalBtn" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
       </div>
 
       <!-- Loading Spinner & Form Iframe -->
-      <div class="relative flex-grow bg-slate-100">
-        <div id="formLoadingSpinner" class="absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-10">
+      <div class="relative flex-grow bg-slate-100 dark:bg-slate-950">
+        <div id="formLoadingSpinner" class="absolute inset-0 flex flex-col items-center justify-center bg-white/90 dark:bg-slate-900/90 z-10">
           <div class="w-8 h-8 border-3 border-amber-600 border-t-transparent rounded-full animate-spin mb-3"></div>
-          <p class="text-xs text-slate-600 font-semibold">Loading official Google Form...</p>
+          <p class="text-xs text-slate-600 dark:text-slate-300 font-semibold">Loading official Google Form...</p>
         </div>
         <iframe id="googleFormIframe" src="" class="w-full h-full border-0" frameborder="0" marginheight="0" marginwidth="0">
           Loading…
@@ -328,15 +483,15 @@
     </div>
   </div>
 
-  <div id="flyerLightboxModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4" role="dialog" aria-modal="true">
-    <div class="relative max-w-3xl w-full bg-slate-900 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+  <div id="flyerLightboxModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-2 sm:p-4" role="dialog" aria-modal="true">
+    <div class="relative max-w-3xl w-full bg-slate-900 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
       <div class="p-3 bg-slate-950 flex items-center justify-between text-white border-b border-slate-800">
         <span id="flyerLightboxTitle" class="text-xs font-bold text-amber-300 truncate pr-4">Official Poster</span>
         <div class="flex items-center gap-2">
-          <a id="flyerLightboxDownload" href="#" target="_blank" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1">
+          <a id="flyerLightboxDownload" href="#" target="_blank" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1 cursor-pointer">
             <i data-lucide="external-link" class="w-3 h-3"></i> View Full
           </a>
-          <button id="closeFlyerModalBtn" class="p-1 text-slate-400 hover:text-white">
+          <button id="closeFlyerModalBtn" class="p-1 text-slate-400 hover:text-white cursor-pointer">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
@@ -348,12 +503,12 @@
   </div>
 
   <div id="passcodeModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4" role="dialog" aria-modal="true">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
-      <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center mb-3">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800">
+      <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center mb-3">
         <i data-lucide="key-round" class="w-5 h-5"></i>
       </div>
-      <h3 class="font-display font-bold text-base text-slate-900 mb-1">UGAP Editorial Access</h3>
-      <p class="text-xs text-slate-500 mb-4">Enter committee passcode to enable editorial controls.</p>
+      <h3 class="font-display font-bold text-base text-slate-900 dark:text-white mb-1">UGAP Editorial Access</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Enter passcode to enable editorial controls.</p>
 
       <form id="passcodeForm" class="space-y-3">
         <div>
@@ -361,17 +516,17 @@
             type="password" 
             id="adminPasscodeInput" 
             placeholder="Enter passcode" 
-            class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-hidden"
+            class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-amber-500 outline-hidden"
             required
           />
-          <p id="passcodeError" class="hidden text-[11px] text-red-600 font-semibold mt-1">Invalid committee passcode. Try again.</p>
+          <p id="passcodeError" class="hidden text-[11px] text-red-600 dark:text-red-400 font-semibold mt-1">Invalid passcode. Try again.</p>
         </div>
 
         <div class="flex gap-2 pt-2">
-          <button type="button" id="cancelPasscodeBtn" class="flex-1 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          <button type="button" id="cancelPasscodeBtn" class="flex-1 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
             Cancel
           </button>
-          <button type="submit" class="flex-1 py-2 rounded-xl bg-brand-navy hover:bg-slate-800 text-amber-300 text-xs font-bold transition-all shadow-xs">
+          <button type="submit" class="flex-1 py-2 rounded-xl bg-brand-navy hover:bg-slate-800 text-amber-300 text-xs font-bold transition-all shadow-xs cursor-pointer">
             Authenticate
           </button>
         </div>
@@ -380,72 +535,74 @@
   </div>
 
   <div id="createModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto" role="dialog" aria-modal="true">
-    <div class="bg-white rounded-2xl max-w-xl w-full p-5 sm:p-7 shadow-2xl border border-slate-200 max-h-[92vh] overflow-y-auto">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-xl w-full p-4 sm:p-7 shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[92vh] overflow-y-auto">
       
       <div class="flex items-center justify-between mb-4">
         <div>
-          <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+          <span id="modalDispatchBadge" class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
             Portal Dispatch
           </span>
-          <h3 class="font-display font-bold text-lg text-slate-900 mt-1">Publish Registration Opening</h3>
+          <h3 id="createModalHeading" class="font-display font-bold text-base sm:text-lg text-slate-900 dark:text-white mt-1">Publish Registration Opening</h3>
         </div>
-        <button id="closeCreateBtn" class="text-slate-400 hover:text-slate-700 p-1">
+        <button id="closeCreateBtn" class="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <form id="createOpportunityForm" class="space-y-3.5">
+      <form id="createOpportunityForm" class="space-y-3 sm:space-y-3.5">
+        <input type="hidden" id="editOpportunityId" value="">
+
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Title (English) *</label>
-          <input type="text" id="inputTitleEn" required placeholder="e.g. Volunteer Intake: Felicitation Ceremony" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-amber-500 outline-hidden" />
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Title (English) *</label>
+          <input type="text" id="inputTitleEn" required placeholder="e.g. Volunteer Intake: Felicitation Ceremony" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-amber-500 outline-hidden" />
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Title (Tamil Translation)</label>
-          <input type="text" id="inputTitleTa" placeholder="e.g. பாராட்டு விழா 2026: தொண்டர் விண்ணப்பம்" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-amber-500 outline-hidden" />
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Title (Tamil Translation)</label>
+          <input type="text" id="inputTitleTa" placeholder="e.g. பாராட்டு விழா 2026: தொண்டர் விண்ணப்பம்" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-amber-500 outline-hidden" />
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Category / Wing *</label>
-            <input type="text" id="inputCategory" required placeholder="e.g. Felicitation, Media Wing, Seminar" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-amber-500 outline-hidden" />
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Category / Wing *</label>
+            <input type="text" id="inputCategory" required placeholder="e.g. Felicitation, Media Wing, Seminar" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-amber-500 outline-hidden" />
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Registration Deadline *</label>
-            <input type="datetime-local" id="inputDeadline" required class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-amber-500 outline-hidden" />
+            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Registration Deadline *</label>
+            <input type="datetime-local" id="inputDeadline" required class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-amber-500 outline-hidden" />
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Eligibility Criteria *</label>
-          <input type="text" id="inputEligibility" required placeholder="e.g. State University Undergraduates (Puttalam District)" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-amber-500 outline-hidden" />
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Eligibility Criteria *</label>
+          <input type="text" id="inputEligibility" required placeholder="e.g. State University Undergraduates (Puttalam District)" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-amber-500 outline-hidden" />
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Official Google Form URL *</label>
-          <input type="url" id="inputFormUrl" required placeholder="https://docs.google.com/forms/d/e/.../viewform" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-amber-500 outline-hidden" />
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Official Google Form URL *</label>
+          <input type="url" id="inputFormUrl" required placeholder="https://docs.google.com/forms/d/e/.../viewform" class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-amber-500 outline-hidden" />
         </div>
 
         <!-- Media Attachment Zone -->
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Official Event Flyer / Poster (Optional)</label>
-          <div class="border border-dashed border-slate-300 rounded-xl p-3 bg-slate-50">
-            <div class="flex items-center gap-2 mb-2">
-              <button type="button" id="triggerFileUploadBtn" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-xs font-semibold text-slate-700 flex items-center gap-1.5 shadow-2xs">
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Official Event Flyer / Poster (Optional)</label>
+          <div class="border border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-3 bg-slate-50 dark:bg-slate-800/50">
+            <div class="flex items-center gap-2 mb-2 flex-wrap">
+              <button type="button" id="triggerFileUploadBtn" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shadow-2xs cursor-pointer">
                 <i data-lucide="upload" class="w-3.5 h-3.5 text-amber-600"></i> Browse File
               </button>
               <input type="file" id="flyerFileInput" accept="image/*" class="hidden">
-              <span class="text-[11px] text-slate-400">or enter image web URL below</span>
+              <span class="text-[11px] text-slate-400">or enter web URL below</span>
             </div>
-            <input type="url" id="inputFlyerUrl" placeholder="https://.../poster.jpg" class="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white focus:border-amber-500 outline-hidden" />
+            <input type="url" id="inputFlyerUrl" placeholder="https://.../poster.jpg" class="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-amber-500 outline-hidden" />
             
             <!-- Live Preview -->
-            <div id="flyerPreviewContainer" class="hidden mt-2 flex items-center justify-between p-2 bg-white rounded-lg border border-slate-200">
+            <div id="flyerPreviewContainer" class="hidden mt-2 flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
               <div class="flex items-center gap-2 overflow-hidden">
                 <img id="flyerPreviewThumb" src="" alt="Thumbnail" class="w-10 h-10 object-cover rounded shrink-0">
-                <span id="flyerPreviewName" class="text-xs text-slate-700 font-medium truncate">flyer.jpg</span>
+                <span id="flyerPreviewName" class="text-xs text-slate-700 dark:text-slate-300 font-medium truncate">flyer.jpg</span>
               </div>
-              <button type="button" id="removeFlyerBtn" class="text-slate-400 hover:text-red-600 p-1">
+              <button type="button" id="removeFlyerBtn" class="text-slate-400 hover:text-red-600 p-1 cursor-pointer">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
               </button>
             </div>
@@ -453,15 +610,15 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Short Description</label>
-          <textarea id="inputDescEn" rows="2" placeholder="Brief outline of responsibilities or registration guidelines..." class="w-full text-xs px-3.5 py-2 rounded-xl border border-slate-300 focus:border-amber-500 outline-hidden"></textarea>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Short Description</label>
+          <textarea id="inputDescEn" rows="2" placeholder="Brief outline of responsibilities or registration guidelines..." class="w-full text-xs px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-amber-500 outline-hidden"></textarea>
         </div>
 
-        <div class="pt-3 border-t border-slate-200 flex justify-end gap-2">
-          <button type="button" id="cancelCreateBtn" class="px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+        <div class="pt-3 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+          <button type="button" id="cancelCreateBtn" class="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
             Cancel
           </button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-brand-navy hover:bg-slate-800 text-amber-300 text-xs font-bold shadow-xs">
+          <button type="submit" id="submitCreateBtn" class="px-5 py-2 rounded-xl bg-brand-navy hover:bg-slate-800 text-amber-300 text-xs font-bold shadow-xs cursor-pointer">
             Publish Live
           </button>
         </div>
@@ -470,25 +627,25 @@
   </div>
 
   <div id="extendModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4" role="dialog" aria-modal="true">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
-      <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center mb-3">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800">
+      <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center mb-3">
         <i data-lucide="calendar-plus" class="w-5 h-5"></i>
       </div>
-      <h3 class="font-display font-bold text-base text-slate-900 mb-1">Extend Deadline</h3>
-      <p id="extendItemTitle" class="text-xs text-slate-500 mb-4 truncate font-medium">Opening Title</p>
+      <h3 class="font-display font-bold text-base text-slate-900 dark:text-white mb-1">Extend Deadline</h3>
+      <p id="extendItemTitle" class="text-xs text-slate-500 dark:text-slate-400 mb-4 truncate font-medium">Opening Title</p>
 
       <form id="extendForm" class="space-y-3">
         <input type="hidden" id="extendItemId">
         <div>
-          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">New Extended Deadline</label>
-          <input type="datetime-local" id="extendNewDeadline" required class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-amber-500 outline-hidden" />
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">New Extended Deadline</label>
+          <input type="datetime-local" id="extendNewDeadline" required class="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-amber-500 outline-hidden" />
         </div>
 
         <div class="flex gap-2 pt-2">
-          <button type="button" id="cancelExtendBtn" class="flex-1 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          <button type="button" id="cancelExtendBtn" class="flex-1 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
             Cancel
           </button>
-          <button type="submit" class="flex-1 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs">
+          <button type="submit" class="flex-1 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-xs cursor-pointer">
             Save Extension
           </button>
         </div>
@@ -497,22 +654,22 @@
   </div>
 
   <div id="backupModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4" role="dialog" aria-modal="true">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="font-display font-bold text-base text-slate-900">Database JSON Sync</h3>
-        <button id="closeBackupBtn" class="text-slate-400 hover:text-slate-700 p-1">
+        <h3 class="font-display font-bold text-base text-slate-900 dark:text-white">Database JSON Sync</h3>
+        <button id="closeBackupBtn" class="text-slate-400 hover:text-slate-700 dark:hover:text-white p-1 cursor-pointer">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
-      <p class="text-xs text-slate-500 mb-3">Export this JSON to keep a backup in your repository or import previous data.</p>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Export this JSON to keep a repository backup or restore previous opportunities.</p>
       
-      <textarea id="backupTextarea" rows="8" class="w-full font-mono text-[11px] p-3 bg-slate-50 border border-slate-300 rounded-xl focus:outline-hidden mb-3"></textarea>
+      <textarea id="backupTextarea" rows="8" class="w-full font-mono text-[11px] p-3 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl focus:outline-hidden mb-3"></textarea>
 
-      <div class="flex items-center justify-between gap-2">
-        <button id="copyJsonBtn" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <button id="copyJsonBtn" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center gap-1 cursor-pointer">
           <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy JSON
         </button>
-        <button id="importJsonBtn" class="px-4 py-1.5 rounded-xl bg-brand-navy hover:bg-slate-800 text-amber-300 text-xs font-bold">
+        <button id="importJsonBtn" class="px-4 py-1.5 rounded-xl bg-brand-navy hover:bg-slate-800 text-amber-300 text-xs font-bold cursor-pointer">
           Import & Restore
         </button>
       </div>
@@ -520,18 +677,18 @@
   </div>
 
   <div id="confirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4" role="dialog" aria-modal="true">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200">
-      <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center mb-3">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800">
+      <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center mb-3">
         <i data-lucide="alert-triangle" class="w-5 h-5"></i>
       </div>
-      <h3 id="confirmModalTitle" class="font-display font-bold text-base text-slate-900 mb-1">Confirm Action</h3>
-      <p id="confirmModalDesc" class="text-xs text-slate-500 mb-5 leading-relaxed">Are you sure you want to proceed?</p>
+      <h3 id="confirmModalTitle" class="font-display font-bold text-base text-slate-900 dark:text-white mb-1">Confirm Action</h3>
+      <p id="confirmModalDesc" class="text-xs text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">Are you sure you want to proceed?</p>
 
       <div class="flex gap-2">
-        <button id="confirmCancelBtn" class="flex-1 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+        <button id="confirmCancelBtn" class="flex-1 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
           Cancel
         </button>
-        <button id="confirmProceedBtn" class="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs">
+        <button id="confirmProceedBtn" class="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-xs cursor-pointer">
           Confirm
         </button>
       </div>
@@ -543,17 +700,44 @@
     <span id="toastMsg" class="font-medium">Action completed successfully.</span>
   </div>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+      getAuth, 
+      signInAnonymously, 
+      signInWithCustomToken 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { 
+      getFirestore, 
+      doc, 
+      setDoc, 
+      deleteDoc, 
+      onSnapshot, 
+      collection 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
     // Safe Lucide Icon Renderer Guard
-    function safeCreateIcons() {
+    window.safeCreateIcons = function() {
       if (typeof lucide !== 'undefined' && lucide && typeof lucide.createIcons === 'function') {
         try {
           lucide.createIcons();
         } catch (err) {
-          console.warn('Lucide icon rendering warning:', err);
+          console.warn('Lucide icon rendering notice:', err);
         }
       }
-    }
+    };
+
+    // Golden Confetti Burst Helper
+    window.triggerConfetti = function() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.7 },
+          colors: ['#D97706', '#F59E0B', '#1C2541', '#059669']
+        });
+      }
+    };
 
     // Default Seed Opportunities
     const DEFAULT_OPPORTUNITIES = [
@@ -641,22 +825,159 @@
     let opportunities = [];
     let currentFlyerData = '';
 
-    // Initialize LocalStorage Data
-    function initData() {
+    // Database Environment
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'ugap-portal-puttalam';
+    let firebaseConfig = null;
+    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+      try {
+        firebaseConfig = JSON.parse(__firebase_config);
+      } catch (err) {
+        console.warn("Could not parse cloud configuration:", err);
+      }
+    }
+
+    let db = null;
+    let auth = null;
+    let authUser = null;
+    let isCloudConnected = false;
+
+    function updateCloudIndicator(status) {
+      const dot = document.getElementById('cloudDot');
+      const text = document.getElementById('cloudStatusText');
+      if (!dot || !text) return;
+
+      if (status === 'live') {
+        dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse";
+        text.textContent = "Live Cloud Sync";
+        text.className = "font-medium text-emerald-300";
+      } else if (status === 'connecting') {
+        dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping";
+        text.textContent = "Connecting...";
+        text.className = "font-medium text-amber-300";
+      } else {
+        dot.className = "w-1.5 h-1.5 rounded-full bg-slate-500";
+        text.textContent = "Local Storage";
+        text.className = "font-medium text-slate-400";
+      }
+    }
+
+    async function initDatabase() {
+      updateCloudIndicator('connecting');
+
+      if (firebaseConfig) {
+        try {
+          const app = initializeApp(firebaseConfig);
+          auth = getAuth(app);
+          db = getFirestore(app);
+
+          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } else {
+            await signInAnonymously(auth);
+          }
+          authUser = auth.currentUser;
+
+          if (authUser) {
+            isCloudConnected = true;
+            updateCloudIndicator('live');
+            subscribeToCloudOpportunities();
+            return;
+          }
+        } catch (err) {
+          console.warn("Cloud connection notice, using local cache:", err);
+        }
+      }
+
+      updateCloudIndicator('offline');
+      initLocalData();
+    }
+
+    function subscribeToCloudOpportunities() {
+      if (!db || !authUser) return;
+      const collectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'opportunities');
+
+      onSnapshot(collectionRef, async (snapshot) => {
+        if (!snapshot.empty) {
+          const loaded = [];
+          snapshot.forEach((docSnapshot) => {
+            loaded.push(docSnapshot.data());
+          });
+          loaded.sort((a, b) => new Date(b.deadline).getTime() - new Date(a.deadline).getTime());
+          opportunities = loaded;
+          renderOpportunities();
+          updateHeroCountdownSpotlight();
+        } else {
+          opportunities = DEFAULT_OPPORTUNITIES;
+          renderOpportunities();
+          updateHeroCountdownSpotlight();
+          for (const item of DEFAULT_OPPORTUNITIES) {
+            await saveOpportunityToCloud(item);
+          }
+        }
+      }, (err) => {
+        console.error("Cloud listener notice:", err);
+        initLocalData();
+      });
+    }
+
+    async function saveOpportunityToCloud(item) {
+      if (isCloudConnected && db && authUser) {
+        try {
+          const itemDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'opportunities', item.id);
+          await setDoc(itemDocRef, item);
+          return true;
+        } catch (err) {
+          console.error("Cloud write notice:", err);
+        }
+      }
+
+      const idx = opportunities.findIndex(o => o.id === item.id);
+      if (idx >= 0) {
+        opportunities[idx] = item;
+      } else {
+        opportunities.unshift(item);
+      }
+      saveLocalData();
+      renderOpportunities();
+      updateHeroCountdownSpotlight();
+      return true;
+    }
+
+    async function deleteOpportunityFromCloud(id) {
+      if (isCloudConnected && db && authUser) {
+        try {
+          const itemDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'opportunities', id);
+          await deleteDoc(itemDocRef);
+          return true;
+        } catch (err) {
+          console.error("Cloud delete notice:", err);
+        }
+      }
+
+      opportunities = opportunities.filter(o => o.id !== id);
+      saveLocalData();
+      renderOpportunities();
+      updateHeroCountdownSpotlight();
+      return true;
+    }
+
+    function initLocalData() {
       try {
         const saved = localStorage.getItem('ugap_portal_items_v2');
         if (saved) {
           opportunities = JSON.parse(saved);
         } else {
           opportunities = DEFAULT_OPPORTUNITIES;
-          saveData();
+          saveLocalData();
         }
       } catch (err) {
         opportunities = DEFAULT_OPPORTUNITIES;
       }
+      renderOpportunities();
+      updateHeroCountdownSpotlight();
     }
 
-    function saveData() {
+    function saveLocalData() {
       try {
         localStorage.setItem('ugap_portal_items_v2', JSON.stringify(opportunities));
       } catch (err) {
@@ -674,6 +995,60 @@
         toast.classList.add('hidden');
       }, 3500);
     }
+
+    window.updateHeroCountdownSpotlight = function() {
+      const spotlightCard = document.getElementById('heroCountdownCard');
+      if (!spotlightCard) return;
+
+      const now = Date.now();
+      const activeItems = opportunities.filter(o => {
+        const d = new Date(o.deadline).getTime();
+        return o.status === 'open' && d > now;
+      }).sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+
+      if (activeItems.length === 0) {
+        const targetTitle = document.getElementById('countdownTargetTitle');
+        if (targetTitle) targetTitle.textContent = "Undergraduates' Association - Puttalam • Empowering Regional Leaders";
+        const dEl = document.getElementById('cdDays');
+        const hEl = document.getElementById('cdHours');
+        const mEl = document.getElementById('cdMins');
+        const sEl = document.getElementById('cdSecs');
+        if (dEl) dEl.textContent = "00";
+        if (hEl) hEl.textContent = "00";
+        if (mEl) mEl.textContent = "00";
+        if (sEl) sEl.textContent = "00";
+        return;
+      }
+
+      const target = activeItems[0];
+      const titleEl = document.getElementById('countdownTargetTitle');
+      if (titleEl) {
+        titleEl.textContent = currentLang === 'ta' && target.titleTa ? target.titleTa : target.titleEn;
+      }
+
+      const diff = new Date(target.deadline).getTime() - now;
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+      const dEl = document.getElementById('cdDays');
+      const hEl = document.getElementById('cdHours');
+      const mEl = document.getElementById('cdMins');
+      const sEl = document.getElementById('cdSecs');
+      if (dEl) dEl.textContent = String(Math.max(0, days)).padStart(2, '0');
+      if (hEl) hEl.textContent = String(Math.max(0, hours)).padStart(2, '0');
+      if (mEl) mEl.textContent = String(Math.max(0, mins)).padStart(2, '0');
+      if (sEl) sEl.textContent = String(Math.max(0, secs)).padStart(2, '0');
+
+      const btn = document.getElementById('countdownActionBtn');
+      if (btn) {
+        btn.onclick = () => {
+          window.triggerConfetti();
+          window.openEmbeddedForm(target.id);
+        };
+      }
+    };
 
     function calculateTimeStatus(deadlineIso) {
       const now = new Date().getTime();
@@ -713,14 +1088,85 @@
       }
     }
 
+    window.addToGoogleCalendar = function(id) {
+      const item = opportunities.find(o => o.id === id);
+      if (!item) return;
+      const title = encodeURIComponent(item.titleEn);
+      const details = encodeURIComponent(`${item.descEn || ''}\n\nOfficial Registration Form: ${item.formUrl}`);
+      const deadlineDate = new Date(item.deadline);
+      const startStr = deadlineDate.toISOString().replace(/-|:|\.\d+/g, '');
+      const endDate = new Date(deadlineDate.getTime() + 60 * 60 * 1000);
+      const endStr = endDate.toISOString().replace(/-|:|\.\d+/g, '');
+      const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${startStr}/${endStr}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      window.triggerConfetti();
+    };
+
+    window.shareOpportunity = async function(id) {
+      const item = opportunities.find(o => o.id === id);
+      if (!item) return;
+      const title = item.titleEn;
+      const url = window.location.href;
+      const shareText = `🎓 ${title} | Undergraduates' Association - Puttalam\nDeadline: ${formatDateDisplay(item.deadline)}\nApply directly:`;
+
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: title,
+            text: shareText,
+            url: url
+          });
+          window.triggerConfetti();
+          return;
+        } catch (e) {
+          // Fallback to clipboard
+        }
+      }
+
+      const tempInput = document.createElement('textarea');
+      tempInput.value = `${shareText} ${url}`;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      try {
+        document.execCommand('copy');
+        showToast("Opportunity link copied to clipboard!");
+        window.triggerConfetti();
+      } catch (err) {
+        showToast("Registration link ready!");
+      }
+      document.body.removeChild(tempInput);
+    };
+
     function renderOpportunities() {
       const container = document.getElementById('opportunitiesContainer');
       const emptyState = document.getElementById('emptyState');
       if (!container) return;
 
-      // Defensive element retrieval
-      const searchEl = document.getElementById('searchInput');
-      const query = searchEl ? searchEl.value.toLowerCase().trim() : '';
+      // Update Category Badge Counters
+      let totalAll = opportunities.length;
+      let totalOpen = 0;
+      let totalClosingSoon = 0;
+      let totalClosed = 0;
+
+      opportunities.forEach(item => {
+        const timeStatus = calculateTimeStatus(item.deadline);
+        const isOpen = item.status === 'open' && !timeStatus.isClosed;
+        if (isOpen) {
+          totalOpen++;
+          if (timeStatus.isClosingSoon) totalClosingSoon++;
+        } else {
+          totalClosed++;
+        }
+      });
+
+      const cAll = document.getElementById('countAll');
+      const cOpen = document.getElementById('countOpen');
+      const cCS = document.getElementById('countClosingSoon');
+      const cClosed = document.getElementById('countClosed');
+      if (cAll) cAll.textContent = totalAll;
+      if (cOpen) cOpen.textContent = totalOpen;
+      if (cCS) cCS.textContent = totalClosingSoon;
+      if (cClosed) cClosed.textContent = totalClosed;
 
       const filtered = opportunities.filter(item => {
         const timeStatus = calculateTimeStatus(item.deadline);
@@ -729,13 +1175,6 @@
         if (currentFilter === 'open' && !isOpen) return false;
         if (currentFilter === 'closing-soon' && (!isOpen || !timeStatus.isClosingSoon)) return false;
         if (currentFilter === 'closed' && isOpen) return false;
-
-        if (query) {
-          const matchTitle = (item.titleEn || '').toLowerCase().includes(query) || (item.titleTa || '').toLowerCase().includes(query);
-          const matchCat = (item.category || '').toLowerCase().includes(query);
-          const matchElig = (item.eligibility || '').toLowerCase().includes(query);
-          return matchTitle || matchCat || matchElig;
-        }
         return true;
       });
 
@@ -753,30 +1192,30 @@
         const isCurrentlyOpen = item.status === 'open' && !timeStatus.isClosed;
         const title = currentLang === 'ta' && item.titleTa ? item.titleTa : item.titleEn;
 
-        // Badge determination
+        // Status Badges
         let badgeHtml = '';
         if (!isCurrentlyOpen) {
-          badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-300 uppercase">${t.closedBadge}</span>`;
+          badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700 uppercase">${t.closedBadge}</span>`;
         } else if (item.isExtended) {
-          badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300 uppercase animate-pulse flex items-center gap-1">
-            <i data-lucide="zap" class="w-3 h-3 text-amber-600"></i> ${t.extendedBadge}
+          badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700 uppercase animate-pulse flex items-center gap-1">
+            <i data-lucide="zap" class="w-3 h-3 text-amber-600 dark:text-amber-400"></i> ${t.extendedBadge}
           </span>`;
         } else if (timeStatus.isClosingSoon) {
-          badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-red-50 text-red-700 border border-red-200 uppercase flex items-center gap-1">
-            <i data-lucide="alert-circle" class="w-3 h-3 text-red-600"></i> ${t.closingSoonBadge}
+          badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 uppercase flex items-center gap-1">
+            <i data-lucide="alert-circle" class="w-3 h-3 text-red-600 dark:text-red-400"></i> ${t.closingSoonBadge}
           </span>`;
         } else {
-          badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 uppercase">${t.activeBadge}</span>`;
+          badgeHtml = `<span class="px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 uppercase">${t.activeBadge}</span>`;
         }
 
-        // Flyer image block
+        // Flyer Thumbnail
         let flyerHtml = '';
         if (item.flyerUrl) {
           flyerHtml = `
             <div class="relative h-44 w-full bg-slate-900 overflow-hidden group cursor-pointer" onclick="openFlyerLightbox('${item.id}')">
               <img src="${item.flyerUrl}" alt="${item.titleEn}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-95" onerror="this.parentElement.style.display='none'" />
               <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent flex items-end p-3">
-                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-xs text-[10px] font-bold text-slate-800 shadow-xs">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs text-[10px] font-bold text-slate-800 dark:text-amber-300 shadow-xs">
                   <i data-lucide="maximize-2" class="w-3 h-3 text-amber-600"></i> ${t.viewFlyer}
                 </span>
               </div>
@@ -784,56 +1223,67 @@
           `;
         }
 
-        // Admin Toolbar
+        // Admin Controls (Visible only during active session: Edit, Clone, Extend, Status, Delete)
         let adminActionHtml = '';
         if (isAdminActive) {
           adminActionHtml = `
-            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-              <button onclick="promptExtendDeadline('${item.id}')" class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 font-semibold flex items-center gap-1">
-                <i data-lucide="calendar-plus" class="w-3 h-3 text-amber-600"></i> Extend
-              </button>
-              <button onclick="toggleItemStatus('${item.id}')" class="px-2.5 py-1 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 font-semibold">
-                ${item.status === 'open' ? 'Force Close' : 'Reopen'}
-              </button>
-              <button onclick="promptDeleteItem('${item.id}')" class="p-1 text-slate-400 hover:text-red-600 transition-colors" title="Delete">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
+            <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-1 text-[11px] flex-wrap">
+              <div class="flex items-center gap-1">
+                <button onclick="promptEditOpportunity('${item.id}')" class="px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 font-semibold flex items-center gap-1 cursor-pointer" title="Edit Opening">
+                  <i data-lucide="edit-3" class="w-3 h-3"></i> Edit
+                </button>
+                <button onclick="duplicateOpportunity('${item.id}')" class="px-2 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 font-semibold flex items-center gap-1 cursor-pointer" title="Clone Opening">
+                  <i data-lucide="copy" class="w-3 h-3"></i> Clone
+                </button>
+                <button onclick="promptExtendDeadline('${item.id}')" class="px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 font-semibold flex items-center gap-1 cursor-pointer" title="Extend Deadline">
+                  <i data-lucide="calendar-plus" class="w-3 h-3 text-amber-600"></i> Extend
+                </button>
+              </div>
+
+              <div class="flex items-center gap-1">
+                <button onclick="toggleItemStatus('${item.id}')" class="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer">
+                  ${item.status === 'open' ? 'Force Close' : 'Reopen'}
+                </button>
+                <button onclick="promptDeleteItem('${item.id}')" class="p-1 text-slate-400 hover:text-red-600 transition-colors cursor-pointer" title="Delete">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
             </div>
           `;
         }
 
         return `
-          <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between theme-transition">
             <div>
               ${flyerHtml}
-              <div class="p-5">
+              <div class="p-4 sm:p-5">
                 
-                <!-- Category & Badges -->
+                <!-- Category & Status Row -->
                 <div class="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
-                  <span class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                  <span class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
                     <i data-lucide="tag" class="w-2.5 h-2.5"></i> ${item.category}
                   </span>
                   ${badgeHtml}
                 </div>
 
                 <!-- Title -->
-                <h3 class="font-display font-bold text-slate-900 text-base leading-snug mb-2 line-clamp-2">
+                <h3 class="font-display font-bold text-slate-900 dark:text-white text-base leading-snug mb-2 line-clamp-2">
                   ${title}
                 </h3>
 
                 <!-- Eligibility -->
-                <p class="text-xs text-slate-500 flex items-start gap-1.5 mb-3">
-                  <i data-lucide="users" class="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0"></i>
+                <p class="text-xs text-slate-500 dark:text-slate-400 flex items-start gap-1.5 mb-3">
+                  <i data-lucide="users" class="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 mt-0.5 shrink-0"></i>
                   <span class="line-clamp-2"><strong>Eligibility:</strong> ${item.eligibility}</span>
                 </p>
 
-                <!-- Deadline countdown -->
-                <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-100 flex items-center justify-between text-xs text-slate-600 mb-3">
+                <!-- Deadline countdown pill -->
+                <div class="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-2.5 border border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 mb-3">
                   <span class="flex items-center gap-1.5 text-[11px]">
-                    <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i>
+                    <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400"></i>
                     <span>${t.deadlineLabel}: <strong>${formatDateDisplay(item.deadline)}</strong></span>
                   </span>
-                  <span class="font-bold text-[10px] px-2 py-0.5 rounded bg-white border border-slate-200 ${timeStatus.isClosingSoon ? 'text-red-600' : 'text-slate-700'}">
+                  <span class="font-bold text-[10px] px-2 py-0.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 ${timeStatus.isClosingSoon ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-300'}">
                     ${timeStatus.text}
                   </span>
                 </div>
@@ -841,20 +1291,34 @@
               </div>
             </div>
 
-            <!-- Primary Action -->
-            <div class="p-5 pt-0">
-              <button 
-                onclick="openEmbeddedForm('${item.id}')" 
-                class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 ${
-                  isCurrentlyOpen 
-                    ? 'bg-brand-navy hover:bg-slate-800 text-amber-300 active:scale-[0.99]' 
-                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                }"
-                ${!isCurrentlyOpen ? 'disabled' : ''}
-              >
-                <i data-lucide="file-edit" class="w-3.5 h-3.5"></i>
-                <span>${isCurrentlyOpen ? t.applyBtn : t.closedBadge}</span>
-              </button>
+            <!-- Card Bottom Actions & Utilities -->
+            <div class="p-4 sm:p-5 pt-0">
+              <div class="flex items-center gap-2 mb-2">
+                <button 
+                  onclick="openEmbeddedForm('${item.id}')" 
+                  class="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer ${
+                    isCurrentlyOpen 
+                      ? 'bg-brand-navy dark:bg-amber-500 hover:bg-slate-800 dark:hover:bg-amber-400 text-amber-300 dark:text-slate-950 active:scale-[0.99]' 
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+                  }"
+                  ${!isCurrentlyOpen ? 'disabled' : ''}
+                >
+                  <i data-lucide="file-edit" class="w-3.5 h-3.5"></i>
+                  <span>${isCurrentlyOpen ? t.applyBtn : t.closedBadge}</span>
+                </button>
+
+                <!-- Share Button -->
+                <button onclick="shareOpportunity('${item.id}')" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer" title="Share Registration Link">
+                  <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+                </button>
+
+                <!-- Calendar Reminder Button -->
+                ${isCurrentlyOpen ? `
+                  <button onclick="addToGoogleCalendar('${item.id}')" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer" title="Add to Google Calendar">
+                    <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-amber-600"></i>
+                  </button>
+                ` : ''}
+              </div>
 
               ${adminActionHtml}
             </div>
@@ -863,10 +1327,10 @@
         `;
       }).join('');
 
-      safeCreateIcons();
+      window.safeCreateIcons();
     }
 
-    function openEmbeddedForm(id) {
+    window.openEmbeddedForm = function(id) {
       const item = opportunities.find(o => o.id === id);
       if (!item) return;
 
@@ -883,7 +1347,7 @@
       if (deadline) deadline.innerHTML = `<i data-lucide="clock" class="w-3 h-3 text-amber-600"></i> ${formatDateDisplay(item.deadline)}`;
       if (extLink) extLink.href = item.formUrl;
 
-      // Normalize Google Form URL for clean embedding
+      // Google Form embedded reader formatting
       let embedUrl = item.formUrl;
       if (embedUrl.includes('docs.google.com/forms')) {
         if (!embedUrl.includes('embedded=true')) {
@@ -900,18 +1364,19 @@
 
       modal.classList.remove('hidden');
       document.body.style.overflow = 'hidden';
-      safeCreateIcons();
-    }
+      window.safeCreateIcons();
+      window.triggerConfetti();
+    };
 
-    function closeEmbeddedForm() {
+    window.closeEmbeddedForm = function() {
       const modal = document.getElementById('formEmbedModal');
       const iframe = document.getElementById('googleFormIframe');
       if (modal) modal.classList.add('hidden');
       if (iframe) iframe.src = '';
       document.body.style.overflow = '';
-    }
+    };
 
-    function openFlyerLightbox(id) {
+    window.openFlyerLightbox = function(id) {
       const item = opportunities.find(o => o.id === id);
       if (!item || !item.flyerUrl) return;
 
@@ -926,15 +1391,15 @@
 
       if (modal) modal.classList.remove('hidden');
       document.body.style.overflow = 'hidden';
-    }
+    };
 
-    function closeFlyerLightbox() {
+    window.closeFlyerLightbox = function() {
       const modal = document.getElementById('flyerLightboxModal');
       const img = document.getElementById('flyerLightboxImg');
       if (modal) modal.classList.add('hidden');
       if (img) img.src = '';
       document.body.style.overflow = '';
-    }
+    };
 
     function openPasscodeModal() {
       if (isAdminActive) {
@@ -978,7 +1443,6 @@
       renderOpportunities();
     }
 
-    // Custom In-App Confirmation Handler
     let pendingConfirmAction = null;
     function showCustomConfirm(title, desc, action) {
       const titleEl = document.getElementById('confirmModalTitle');
@@ -991,7 +1455,6 @@
       if (modal) modal.classList.remove('hidden');
     }
 
-    // Reset flyer attachment inputs
     function resetFlyerAttachment() {
       currentFlyerData = '';
       const fileInput = document.getElementById('flyerFileInput');
@@ -1005,14 +1468,193 @@
       if (previewThumb) previewThumb.src = '';
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      // Set year
+    function setFlyerPreview(urlOrData, name = "Poster") {
+      currentFlyerData = urlOrData;
+      const previewCont = document.getElementById('flyerPreviewContainer');
+      const previewThumb = document.getElementById('flyerPreviewThumb');
+      const previewName = document.getElementById('flyerPreviewName');
+      const urlInput = document.getElementById('inputFlyerUrl');
+
+      if (urlOrData) {
+        if (previewThumb) previewThumb.src = urlOrData;
+        if (previewName) previewName.textContent = name;
+        if (previewCont) previewCont.classList.remove('hidden');
+        if (urlInput) urlInput.value = urlOrData.startsWith('data:') ? '' : urlOrData;
+      } else {
+        resetFlyerAttachment();
+      }
+    }
+
+    window.promptEditOpportunity = function(id) {
+      const item = opportunities.find(o => o.id === id);
+      if (!item) return;
+
+      document.getElementById('editOpportunityId').value = item.id;
+      document.getElementById('inputTitleEn').value = item.titleEn || '';
+      document.getElementById('inputTitleTa').value = item.titleTa || '';
+      document.getElementById('inputCategory').value = item.category || '';
+      document.getElementById('inputEligibility').value = item.eligibility || '';
+      document.getElementById('inputFormUrl').value = item.formUrl || '';
+      document.getElementById('inputDescEn').value = item.descEn || '';
+
+      try {
+        const d = new Date(item.deadline);
+        const pad = (n) => String(n).padStart(2, '0');
+        const formatted = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        document.getElementById('inputDeadline').value = formatted;
+      } catch (e) {
+        document.getElementById('inputDeadline').value = '';
+      }
+
+      if (item.flyerUrl) {
+        setFlyerPreview(item.flyerUrl, "Existing Flyer");
+      } else {
+        resetFlyerAttachment();
+      }
+
+      document.getElementById('modalDispatchBadge').textContent = "Update Dispatch";
+      document.getElementById('createModalHeading').textContent = "Edit Registration Opening";
+      document.getElementById('submitCreateBtn').textContent = "Save Changes";
+
+      const modal = document.getElementById('createModal');
+      if (modal) modal.classList.remove('hidden');
+    };
+
+    window.duplicateOpportunity = async function(id) {
+      const item = opportunities.find(o => o.id === id);
+      if (!item) return;
+
+      showCustomConfirm("Duplicate Opening", `Create a clone of "${item.titleEn}"?`, async () => {
+        const clonedItem = {
+          ...item,
+          id: `ugap-${Date.now()}`,
+          titleEn: `${item.titleEn} (Copy)`,
+          titleTa: item.titleTa ? `${item.titleTa} (நகல்)` : '',
+          deadline: new Date(Date.now() + 7 * 86400000).toISOString(),
+          isExtended: false,
+          status: 'open'
+        };
+
+        await saveOpportunityToCloud(clonedItem);
+        showToast("Opening cloned successfully. Ready to edit.");
+        window.triggerConfetti();
+      });
+    };
+
+    function initTheme() {
+      const themeToggleBtn = document.getElementById('themeToggleBtn');
+      const themeIcon = document.getElementById('themeIcon');
+      const themeMeta = document.getElementById('themeColorMeta');
+
+      function updateThemeUI(isDark) {
+        if (isDark) {
+          document.documentElement.classList.add('dark');
+          if (themeIcon) themeIcon.setAttribute('data-lucide', 'sun');
+          if (themeMeta) themeMeta.setAttribute('content', '#080E1E');
+          try { localStorage.setItem('ugap_portal_theme', 'dark'); } catch(e){}
+        } else {
+          document.documentElement.classList.remove('dark');
+          if (themeIcon) themeIcon.setAttribute('data-lucide', 'moon');
+          if (themeMeta) themeMeta.setAttribute('content', '#0B132B');
+          try { localStorage.setItem('ugap_portal_theme', 'light'); } catch(e){}
+        }
+        window.safeCreateIcons();
+      }
+
+      const isCurrentDark = document.documentElement.classList.contains('dark');
+      updateThemeUI(isCurrentDark);
+
+      if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+          const currentlyDark = document.documentElement.classList.contains('dark');
+          updateThemeUI(!currentlyDark);
+        });
+      }
+    }
+
+    let deferredPrompt = null;
+    function initPWA() {
+      try {
+        if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+          const swScript = `
+            const CACHE_NAME = 'ugap-pwa-cache-v2';
+            self.addEventListener('install', (e) => { self.skipWaiting(); });
+            self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
+            self.addEventListener('fetch', (e) => {
+              e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+            });
+          `;
+          const blob = new Blob([swScript], { type: 'application/javascript' });
+          const swUrl = URL.createObjectURL(blob);
+          navigator.serviceWorker.register(swUrl).catch(() => {});
+        }
+      } catch (e) {}
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const installBtn = document.getElementById('pwaInstallBtn');
+        if (installBtn) {
+          installBtn.classList.remove('hidden');
+          installBtn.classList.add('inline-flex');
+        }
+      });
+
+      const installBtn = document.getElementById('pwaInstallBtn');
+      if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+          if (!deferredPrompt) return;
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === 'accepted') {
+            installBtn.classList.add('hidden');
+            installBtn.classList.remove('inline-flex');
+            showToast("UGAP Portal added to home screen!");
+            window.triggerConfetti();
+          }
+          deferredPrompt = null;
+        });
+      }
+    }
+
+    window.promptExtendDeadline = function(id) {
+      const item = opportunities.find(o => o.id === id);
+      if (!item) return;
+      const idEl = document.getElementById('extendItemId');
+      const titleEl = document.getElementById('extendItemTitle');
+      const modal = document.getElementById('extendModal');
+
+      if (idEl) idEl.value = id;
+      if (titleEl) titleEl.textContent = item.titleEn;
+      if (modal) modal.classList.remove('hidden');
+    };
+
+    window.toggleItemStatus = async function(id) {
+      const item = opportunities.find(o => o.id === id);
+      if (!item) return;
+      item.status = item.status === 'open' ? 'closed' : 'open';
+      await saveOpportunityToCloud(item);
+      showToast(`Status toggled to: ${item.status.toUpperCase()}`);
+    };
+
+    window.promptDeleteItem = function(id) {
+      showCustomConfirm("Delete Opening", "Are you sure you want to permanently delete this registration opening?", async () => {
+        await deleteOpportunityFromCloud(id);
+        showToast("Registration opening removed.");
+      });
+    };
+
+    function bootApp() {
       const yrEl = document.getElementById('currentYear');
       if (yrEl) yrEl.textContent = new Date().getFullYear();
 
-      initData();
-      renderOpportunities();
-      safeCreateIcons();
+      initTheme();
+      initPWA();
+      initDatabase();
+      window.safeCreateIcons();
+
+      // Start Countdown Spotlight loop (ticks every second)
+      setInterval(window.updateHeroCountdownSpotlight, 1000);
 
       // Language Switchers
       const langEnBtn = document.getElementById('langEnBtn');
@@ -1027,16 +1669,15 @@
         
         if (langEnBtn) {
           langEnBtn.className = lang === 'en' 
-            ? 'px-2.5 py-0.5 rounded-md bg-white text-slate-900 font-bold transition-all text-[11px]'
-            : 'px-2.5 py-0.5 rounded-md text-slate-400 hover:text-white transition-all text-[11px]';
+            ? 'px-2 py-0.5 rounded-md bg-white text-slate-900 font-bold transition-all text-[11px]'
+            : 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition-all text-[11px]';
         }
         if (langTaBtn) {
           langTaBtn.className = lang === 'ta'
-            ? 'px-2.5 py-0.5 rounded-md bg-white text-slate-900 font-bold transition-all text-[11px]'
-            : 'px-2.5 py-0.5 rounded-md text-slate-400 hover:text-white transition-all text-[11px]';
+            ? 'px-2 py-0.5 rounded-md bg-white text-slate-900 font-bold transition-all text-[11px]'
+            : 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white transition-all text-[11px]';
         }
 
-        // Static Text Replacements with safe check
         const safeText = (id, text) => {
           const el = document.getElementById(id);
           if (el) el.textContent = text;
@@ -1051,28 +1692,24 @@
         safeText('trust3', t.trust3);
 
         renderOpportunities();
+        window.updateHeroCountdownSpotlight();
       }
 
       // Filter Tabs
       document.querySelectorAll('.filter-tab').forEach(tab => {
         tab.addEventListener('click', () => {
           document.querySelectorAll('.filter-tab').forEach(t => {
-            t.className = 'filter-tab px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-white text-slate-600 hover:text-slate-900 border border-slate-200';
+            t.className = 'filter-tab px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer';
           });
-          tab.className = 'filter-tab active-tab px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-brand-navy text-amber-300 shadow-xs border border-brand-navy';
+          tab.className = 'filter-tab active-tab px-3.5 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap bg-brand-navy text-amber-300 shadow-xs border border-brand-navy flex items-center gap-1.5 cursor-pointer';
           currentFilter = tab.dataset.filter;
           renderOpportunities();
         });
       });
 
-      // Search & Reset
-      const searchInput = document.getElementById('searchInput');
-      if (searchInput) searchInput.addEventListener('input', renderOpportunities);
-
       const resetFilterBtn = document.getElementById('resetFilterBtn');
       if (resetFilterBtn) {
         resetFilterBtn.addEventListener('click', () => {
-          if (searchInput) searchInput.value = '';
           currentFilter = 'all';
           const defaultTab = document.querySelector('[data-filter="all"]');
           if (defaultTab) defaultTab.click();
@@ -1081,12 +1718,12 @@
 
       // Modal Triggers
       const closeFormBtn = document.getElementById('closeFormModalBtn');
-      if (closeFormBtn) closeFormBtn.addEventListener('click', closeEmbeddedForm);
+      if (closeFormBtn) closeFormBtn.addEventListener('click', window.closeEmbeddedForm);
 
       const closeFlyerBtn = document.getElementById('closeFlyerModalBtn');
-      if (closeFlyerBtn) closeFlyerBtn.addEventListener('click', closeFlyerLightbox);
+      if (closeFlyerBtn) closeFlyerBtn.addEventListener('click', window.closeFlyerLightbox);
 
-      // Admin Auth Triggers
+      // Admin Auth
       const adminLoginBtn = document.getElementById('adminLoginBtn');
       if (adminLoginBtn) adminLoginBtn.addEventListener('click', openPasscodeModal);
 
@@ -1127,17 +1764,18 @@
           const modal = document.getElementById('passcodeModal');
           const err = document.getElementById('passcodeError');
 
-          if (code === 'UGAP@reg5006') {
+          if (code === 'UGAP@reg/5006') {
             if (modal) modal.classList.add('hidden');
             setAdminState(true);
             showToast("Admin authorized. Editorial tools enabled.");
+            window.triggerConfetti();
           } else {
             if (err) err.classList.remove('hidden');
           }
         });
       }
 
-      // Confirm modal buttons
+      // Confirmation Modal Listeners
       const confirmCancelBtn = document.getElementById('confirmCancelBtn');
       if (confirmCancelBtn) {
         confirmCancelBtn.addEventListener('click', () => {
@@ -1157,6 +1795,7 @@
         });
       }
 
+      // Flyer File Upload Handling
       const triggerUploadBtn = document.getElementById('triggerFileUploadBtn');
       const flyerFileInput = document.getElementById('flyerFileInput');
       if (triggerUploadBtn && flyerFileInput) {
@@ -1169,16 +1808,7 @@
           if (file) {
             const reader = new FileReader();
             reader.onload = function(evt) {
-              currentFlyerData = evt.target.result;
-              const thumb = document.getElementById('flyerPreviewThumb');
-              const name = document.getElementById('flyerPreviewName');
-              const cont = document.getElementById('flyerPreviewContainer');
-              const urlInput = document.getElementById('inputFlyerUrl');
-
-              if (thumb) thumb.src = currentFlyerData;
-              if (name) name.textContent = file.name;
-              if (cont) cont.classList.remove('hidden');
-              if (urlInput) urlInput.value = '';
+              setFlyerPreview(evt.target.result, file.name);
             };
             reader.readAsDataURL(file);
           }
@@ -1190,14 +1820,7 @@
         inputFlyerUrl.addEventListener('input', function(e) {
           const val = e.target.value.trim();
           if (val) {
-            currentFlyerData = val;
-            const thumb = document.getElementById('flyerPreviewThumb');
-            const name = document.getElementById('flyerPreviewName');
-            const cont = document.getElementById('flyerPreviewContainer');
-
-            if (thumb) thumb.src = val;
-            if (name) name.textContent = "Web Poster URL";
-            if (cont) cont.classList.remove('hidden');
+            setFlyerPreview(val, "Web Poster URL");
           } else {
             resetFlyerAttachment();
           }
@@ -1209,13 +1832,19 @@
         removeFlyerBtn.addEventListener('click', resetFlyerAttachment);
       }
 
-      // Publishing Modal triggers
+      // Publishing Modal (New Opening trigger)
       const quickCreateBtn = document.getElementById('quickCreateBtn');
       if (quickCreateBtn) {
         quickCreateBtn.addEventListener('click', () => {
           resetFlyerAttachment();
           const form = document.getElementById('createOpportunityForm');
           if (form) form.reset();
+          
+          document.getElementById('editOpportunityId').value = '';
+          document.getElementById('modalDispatchBadge').textContent = "Portal Dispatch";
+          document.getElementById('createModalHeading').textContent = "Publish Registration Opening";
+          document.getElementById('submitCreateBtn').textContent = "Publish Live";
+
           const modal = document.getElementById('createModal');
           if (modal) modal.classList.remove('hidden');
         });
@@ -1237,10 +1866,12 @@
         });
       }
 
+      // Create or Edit Opportunity Form Submit
       const createOpportunityForm = document.getElementById('createOpportunityForm');
       if (createOpportunityForm) {
-        createOpportunityForm.addEventListener('submit', (e) => {
+        createOpportunityForm.addEventListener('submit', async (e) => {
           e.preventDefault();
+          const editId = document.getElementById('editOpportunityId')?.value.trim();
           const titleEn = document.getElementById('inputTitleEn')?.value.trim() || '';
           const titleTa = document.getElementById('inputTitleTa')?.value.trim() || '';
           const category = document.getElementById('inputCategory')?.value.trim() || 'General';
@@ -1249,30 +1880,48 @@
           const deadlineVal = document.getElementById('inputDeadline')?.value;
           const descEn = document.getElementById('inputDescEn')?.value.trim() || '';
 
-          const newOpening = {
-            id: `ugap-${Date.now()}`,
-            titleEn,
-            titleTa,
-            category,
-            eligibility,
-            formUrl,
-            flyerUrl: currentFlyerData,
-            deadline: deadlineVal ? new Date(deadlineVal).toISOString() : new Date(Date.now() + 7 * 86400000).toISOString(),
-            isExtended: false,
-            status: 'open',
-            descEn
-          };
+          if (editId) {
+            const existing = opportunities.find(o => o.id === editId);
+            if (existing) {
+              existing.titleEn = titleEn;
+              existing.titleTa = titleTa;
+              existing.category = category;
+              existing.eligibility = eligibility;
+              existing.formUrl = formUrl;
+              existing.flyerUrl = currentFlyerData;
+              if (deadlineVal) existing.deadline = new Date(deadlineVal).toISOString();
+              existing.descEn = descEn;
 
-          opportunities.unshift(newOpening);
-          saveData();
-          renderOpportunities();
+              await saveOpportunityToCloud(existing);
+              showToast("Opening changes saved successfully.");
+              window.triggerConfetti();
+            }
+          } else {
+            const newOpening = {
+              id: `ugap-${Date.now()}`,
+              titleEn,
+              titleTa,
+              category,
+              eligibility,
+              formUrl,
+              flyerUrl: currentFlyerData,
+              deadline: deadlineVal ? new Date(deadlineVal).toISOString() : new Date(Date.now() + 7 * 86400000).toISOString(),
+              isExtended: false,
+              status: 'open',
+              descEn
+            };
+
+            await saveOpportunityToCloud(newOpening);
+            showToast("New registration opening published to cloud.");
+            window.triggerConfetti();
+          }
+
           const modal = document.getElementById('createModal');
           if (modal) modal.classList.add('hidden');
-          showToast("New registration opening published live.");
         });
       }
 
-      // Extend Deadline Modal
+      // Extend Deadline
       const cancelExtendBtn = document.getElementById('cancelExtendBtn');
       if (cancelExtendBtn) {
         cancelExtendBtn.addEventListener('click', () => {
@@ -1283,7 +1932,7 @@
 
       const extendForm = document.getElementById('extendForm');
       if (extendForm) {
-        extendForm.addEventListener('submit', (e) => {
+        extendForm.addEventListener('submit', async (e) => {
           e.preventDefault();
           const id = document.getElementById('extendItemId')?.value;
           const newDt = document.getElementById('extendNewDeadline')?.value;
@@ -1292,16 +1941,16 @@
             item.deadline = new Date(newDt).toISOString();
             item.isExtended = true;
             item.status = 'open';
-            saveData();
-            renderOpportunities();
+            await saveOpportunityToCloud(item);
             const modal = document.getElementById('extendModal');
             if (modal) modal.classList.add('hidden');
             showToast("Deadline successfully extended.");
+            window.triggerConfetti();
           }
         });
       }
 
-      // Data Backup / Sync
+      // JSON Backup
       const exportDataBtn = document.getElementById('exportDataBtn');
       if (exportDataBtn) {
         exportDataBtn.addEventListener('click', () => {
@@ -1334,54 +1983,31 @@
 
       const importJsonBtn = document.getElementById('importJsonBtn');
       if (importJsonBtn) {
-        importJsonBtn.addEventListener('click', () => {
+        importJsonBtn.addEventListener('click', async () => {
           try {
             const textarea = document.getElementById('backupTextarea');
             const parsed = JSON.parse(textarea?.value || '');
             if (Array.isArray(parsed)) {
-              opportunities = parsed;
-              saveData();
-              renderOpportunities();
+              for (const item of parsed) {
+                await saveOpportunityToCloud(item);
+              }
               const modal = document.getElementById('backupModal');
               if (modal) modal.classList.add('hidden');
-              showToast("Portal data restored successfully.");
+              showToast("Cloud portal data restored successfully.");
+              window.triggerConfetti();
             }
           } catch (err) {
-            showToast("Invalid JSON syntax.");
+            showToast("Invalid JSON format.");
           }
         });
       }
-    });
+    }
 
-    window.promptExtendDeadline = function(id) {
-      const item = opportunities.find(o => o.id === id);
-      if (!item) return;
-      const idEl = document.getElementById('extendItemId');
-      const titleEl = document.getElementById('extendItemTitle');
-      const modal = document.getElementById('extendModal');
-
-      if (idEl) idEl.value = id;
-      if (titleEl) titleEl.textContent = item.titleEn;
-      if (modal) modal.classList.remove('hidden');
-    };
-
-    window.toggleItemStatus = function(id) {
-      const item = opportunities.find(o => o.id === id);
-      if (!item) return;
-      item.status = item.status === 'open' ? 'closed' : 'open';
-      saveData();
-      renderOpportunities();
-      showToast(`Status toggled to: ${item.status.toUpperCase()}`);
-    };
-
-    window.promptDeleteItem = function(id) {
-      showCustomConfirm("Delete Opening", "Are you sure you want to permanently delete this registration portal?", () => {
-        opportunities = opportunities.filter(o => o.id !== id);
-        saveData();
-        renderOpportunities();
-        showToast("Registration opening removed.");
-      });
-    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bootApp);
+    } else {
+      bootApp();
+    }
   </script>
 </body>
 </html>
